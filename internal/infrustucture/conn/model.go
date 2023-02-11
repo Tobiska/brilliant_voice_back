@@ -3,6 +3,7 @@ package conn
 import (
 	"brillian_voice_back/internal/domain/entity/room"
 	"brillian_voice_back/internal/domain/entity/user"
+	"strconv"
 )
 
 type StateInf struct {
@@ -17,17 +18,21 @@ type StateInf struct {
 	//todo number of round
 }
 
-func ToInfState(state room.GameState) StateInf {
+func ToInfState(state room.GameState) (StateInf, error) {
+	o, err := state.GetOwner()
+	if err != nil {
+		return StateInf{}, err
+	}
 	return StateInf{
 		Code:    state.Descriptor.Code,
 		Users:   toInfUsers(state.Users),
 		IsFully: state.IsFully,
 		Properties: PropertiesInf{
 			CountPlayers: state.Properties.CountPlayers,
-			Time:         string(state.Properties.TimerDuration),
+			Time:         strconv.Itoa(state.Properties.TimerDuration),
 		},
-		OwnerName: state.Users[state.OwnerId].Username,
-	}
+		OwnerName: o.Username,
+	}, nil
 }
 
 type UserInf struct {

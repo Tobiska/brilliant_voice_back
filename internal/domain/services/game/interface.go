@@ -8,5 +8,5 @@ import (
 
 type IGameProvider interface {
 	FindRoom(ctx context.Context, code string) (*room.Room, error)
-	CreateRoom(ctx context.Context, ownerName, ownerID string, properties properties.Properties) (*room.Room, error)
+	CreateRoom(ctx context.Context, ownerID string, properties properties.Properties) (*room.Room, error)
 }

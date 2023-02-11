@@ -5,6 +5,7 @@ import (
 	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/domain/entity/room"
 	"context"
+	"github.com/rs/zerolog/log"
 )
 
 type Service struct {
@@ -18,10 +19,15 @@ func NewGameService(provider IGameProvider) *Service {
 }
 
 func (s *Service) CreateRoom(ctx context.Context, input *dto.InputCreateGameDto) (*room.Room, error) {
-	return s.provider.CreateRoom(ctx, input.ID, input.Username, properties.Properties{
+	r, err := s.provider.CreateRoom(ctx, input.ID, properties.Properties{
 		CountPlayers:  input.CountPlayers,
 		TimerDuration: input.TimeDurationRound,
 	})
+	if err != nil {
+		return nil, err
+	}
+	log.Info().Str("room_code", r.Desc().Code).Msg("room has created")
+	return r, nil
 }
 
 func (s *Service) JoinToRoom(ctx context.Context, input *dto.InputJoinGameDto) (*room.Room, error) {

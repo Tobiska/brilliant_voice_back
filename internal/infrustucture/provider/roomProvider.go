@@ -24,11 +24,13 @@ func NewProvider() *Provider {
 	}
 }
 
-func (p *Provider) CreateRoom(ctx context.Context, ownerID, ownerName string, properties properties.Properties) (*room.Room, error) {
+func (p *Provider) CreateRoom(ctx context.Context, ownerID string, properties properties.Properties) (*room.Room, error) {
 	//todo generate code
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.storage[ownerID] = room.NewRoom(ownerID, ownerID, properties)
+	if _, ok := p.storage[ownerID]; !ok {
+		p.storage[ownerID] = room.NewRoom(ownerID, ownerID, properties)
+	}
 	return p.storage[ownerID], nil
 }
 

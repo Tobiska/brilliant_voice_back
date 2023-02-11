@@ -5,9 +5,11 @@ import (
 	"brillian_voice_back/internal/domain/entity/user"
 	"brillian_voice_back/internal/domain/services/game"
 	"brillian_voice_back/internal/infrustucture/conn"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/schema"
 	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -40,17 +42,13 @@ func (h *Handler) Register(e *gin.Engine) {
 
 func (h *Handler) registerCreateRoom(e *gin.Engine) {
 	e.POST(CreatePath, func(c *gin.Context) {
-		func(w http.ResponseWriter, r *http.Request) {
-			h.createHandle(c)
-		}(c.Writer, c.Request)
+		h.createHandle(c)
 	})
 }
 
 func (h *Handler) registerJoinRoom(e *gin.Engine) {
 	e.GET(JoinPath, func(c *gin.Context) {
-		func(w http.ResponseWriter, r *http.Request) {
-			h.joinHandle(c)
-		}(c.Writer, c.Request)
+		h.joinHandle(c.Writer, c.Request)
 	})
 }
 
@@ -79,35 +77,49 @@ func (h *Handler) createHandle(c *gin.Context) {
 
 var decoder = schema.NewDecoder()
 
-func (h *Handler) joinHandle(c *gin.Context) {
+func (h *Handler) joinHandle(w http.ResponseWriter, req *http.Request) {
 	var body JoinInput
-	if err := decoder.Decode(&body, c.Request.URL.Query()); err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+	if err := decoder.Decode(&body, req.URL.Query()); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "%s", err)
 		return
 	}
-	r, err := h.service.JoinToRoom(c.Request.Context(), &dto.InputJoinGameDto{
+	r, err := h.service.JoinToRoom(req.Context(), &dto.InputJoinGameDto{
 		Username: body.Username,
 		ID:       body.ID,
 		Code:     body.Code,
 	})
 	if err != nil {
-		c.String(http.StatusNotFound, err.Error())
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "%s", err)
 		return
 	}
 
-	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	ws, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "%s", err)
 		return
 	}
 
 	u := user.NewUser(body.ID, body.Username, conn.NewPlayerConn(ws, r))
+	ws.SetCloseHandler(func(code int, text string) error {
+		return u.DeleteAndClose()
+	})
+	log.Info().
+		Str("id", body.ID).
+		Str("username", body.Username).
+		Str("room", r.Desc().Code).Msg("created new user and joined to room")
 	if err := r.JoinToRoom(u); err != nil { //todo (может получится что owner игру создаст но присоединиться не сможет)
+		log.Error().
+			Err(err).
+			Str("id", body.ID).
+			Str("room_code", r.Desc().Code).Msg("an error occurred while joining the room")
 		_ = u.Close() //todo mv to service layer
-		c.String(http.StatusInternalServerError, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "%s", err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"msg": "successfully joined to the room",
-	})
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "successfuly room created")
 }

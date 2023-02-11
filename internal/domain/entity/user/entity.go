@@ -1,6 +1,8 @@
 package user
 
-import "fmt"
+import (
+	"github.com/rs/zerolog/log"
+)
 
 type User struct {
 	ID       string
@@ -22,12 +24,12 @@ func (u *User) Update() error {
 }
 
 func (u *User) Close() error {
-	fmt.Println("connection close: ", u.ID, u.Username)
+	log.Info().Str("ID", u.ID).Msg("connection close")
 	return u.conn.Close()
 }
 
 func (u *User) DeleteAndClose() error {
-	fmt.Println("user delete and connection close: ", u.ID, u.Username)
+	log.Info().Str("ID", u.ID).Msg("user delete and connection close")
 	u.conn.RequestToLeave(u.ID)
 	return u.conn.Close()
 }

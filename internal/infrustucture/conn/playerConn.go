@@ -27,7 +27,10 @@ func (pc *PlayerConn) receive() {
 
 func (pc *PlayerConn) Send() error {
 	state := pc.room.GetState()
-	msg := ToInfState(state)
+	msg, err := ToInfState(state)
+	if err != nil {
+		return err
+	}
 	if err := pc.ws.WriteJSON(msg); err != nil {
 		_ = pc.Close()
 		return err
@@ -48,9 +51,6 @@ func NewPlayerConn(ws *websocket.Conn, r *room.Room) *PlayerConn {
 		ws:   ws,
 		room: r,
 	}
-	conn.ws.SetCloseHandler(func(code int, text string) error {
-		return conn.Close()
-	})
 	conn.receive()
 	return conn
 }
