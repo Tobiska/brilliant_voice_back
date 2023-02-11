@@ -1,32 +1,35 @@
 package conn
 
 import (
-	"brillian_voice_back/internal/domain/entity/room"
+	"brillian_voice_back/internal/domain/entity/gameManager"
 	"brillian_voice_back/internal/domain/entity/user"
 	"strconv"
 )
 
 type StateInf struct {
-	Code       string        `json:"code"`
-	Users      []UserInf     `json:"users"`
-	IsFully    bool          `json:"is_fully"`
-	Properties PropertiesInf `json:"properties"`
-	OwnerName  string        `json:"owner_name"`
-	//todo status
-	//todo question
+	Code            string        `json:"code"`
+	Users           []UserInf     `json:"users"`
+	IsFully         bool          `json:"is_fully"`
+	Properties      PropertiesInf `json:"properties"`
+	OwnerName       string        `json:"owner_name"`
+	Status          string        `json:"status"`
+	CurrentQuestion string        `json:"current_question"`
 	//todo time
-	//todo number of round
+	NumberOfRound int `json:"number_of_Round"`
 }
 
-func ToInfState(state room.GameState) (StateInf, error) {
+func ToInfState(state gameManager.GameState) (StateInf, error) {
 	o, err := state.GetOwner()
 	if err != nil {
 		return StateInf{}, err
 	}
 	return StateInf{
-		Code:    state.Descriptor.Code,
-		Users:   toInfUsers(state.Users),
-		IsFully: state.IsFully,
+		NumberOfRound:   state.NumberOfRound,
+		Status:          string(state.Status()),
+		CurrentQuestion: state.CurrentQuestion,
+		Code:            state.Descriptor.Code,
+		Users:           toInfUsers(state.Users),
+		IsFully:         state.IsFully,
 		Properties: PropertiesInf{
 			CountPlayers: state.Properties.CountPlayers,
 			Time:         strconv.Itoa(state.Properties.TimerDuration),
@@ -36,8 +39,8 @@ func ToInfState(state room.GameState) (StateInf, error) {
 }
 
 type UserInf struct {
-	Name string `json:"name"`
-	//todo answer
+	Name   string `json:"name"`
+	Answer string `json:"answer"`
 }
 
 func toInfUsers(users map[string]*user.User) []UserInf {

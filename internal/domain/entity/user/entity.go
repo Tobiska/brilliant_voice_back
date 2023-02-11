@@ -20,7 +20,12 @@ func NewUser(ID, username string, conn IConn) *User {
 }
 
 func (u *User) Update() error {
-	return u.conn.Send()
+	return u.conn.SendState()
+}
+
+func (u *User) Pong() error {
+	_, err := u.conn.Write([]byte("pong"))
+	return err
 }
 
 func (u *User) Close() error {

@@ -1,7 +1,11 @@
 package user
 
+import "io"
+
 type IConn interface {
-	Send() error
+	SendState() error
 	Close() error
 	RequestToLeave(id string)
+
+	io.Writer
 }

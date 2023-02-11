@@ -2,8 +2,8 @@ package conn
 
 import (
 	"brillian_voice_back/internal/domain/entity/room"
-	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog/log"
 )
 
 type PlayerConn struct {
@@ -14,18 +14,33 @@ type PlayerConn struct {
 func (pc *PlayerConn) receive() {
 	go func() {
 		for {
-			t, _, err := pc.ws.ReadMessage() //todo handle msg
+			_, m, err := pc.ws.ReadMessage() //todo handle msg
 			if err != nil {
-				fmt.Println(err)
+				log.Error().Err(err)
 				break
 			}
-			fmt.Println(t)
-			pc.room.OperationChannel() <- "Hey Mambo:)"
+
+			a, err := pc.UnmarshalAction(m)
+			if err != nil {
+				log.Error().
+					Err(err).Msg("unmarshal action error")
+				pc.WriteError(err)
+				continue
+			}
+
+			pc.room.OperationChannel() <- a
 		}
 	}()
 }
 
-func (pc *PlayerConn) Send() error {
+func (pc *PlayerConn) Write(msg []byte) (int, error) {
+	if err := pc.ws.WriteMessage(websocket.TextMessage, msg); err != nil {
+		return 0, err
+	}
+	return len(msg), nil
+}
+
+func (pc *PlayerConn) SendState() error {
 	state := pc.room.GetState()
 	msg, err := ToInfState(state)
 	if err != nil {
