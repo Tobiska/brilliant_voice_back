@@ -8,8 +8,11 @@ import (
 type GameStatus string
 
 var (
-	Wait GameStatus = "WAIT"
-	Dead GameStatus = "DEAD"
+	WaitStart GameStatus = "WAIT_START"
+	WaitUsers GameStatus = "WAIT_USERS"
+	Running   GameStatus = "RUNNING"
+	Pause     GameStatus = "PAUSE"
+	Dead      GameStatus = "DEAD"
 )
 
 type GameState struct {

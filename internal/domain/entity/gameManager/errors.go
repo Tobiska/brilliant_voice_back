@@ -8,4 +8,5 @@ var (
 	ErrUserDoesNotExist  = errors.New("user with id doesn't exist")
 	ErrUserAlreadyExist  = errors.New("user with id is already exist")
 	ErrUndefinedAction   = errors.New("undefined action")
+	ErrEndOfGame         = errors.New("end of the game")
 )

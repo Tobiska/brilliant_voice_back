@@ -62,6 +62,16 @@ func (r *Room) Run() chan error {
 		defer r.Finish()
 		for {
 			select {
+			case <-r.manager.IsRoundFinishCh():
+				if err := r.manager.FinishRound(); err != nil {
+					log.Error().
+						Err(err).
+						Msg("error in time trans to next round")
+					break
+				} //todo add  errCh
+
+			case <-r.manager.TickerUpdateCh():
+				r.notifyAll()
 			case a := <-r.actionCh:
 				log.Info().
 					Str("room_id", r.Desc().Code).

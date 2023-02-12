@@ -11,7 +11,10 @@ import (
 type GameManager struct {
 	numCurRound int
 	state       *GameState
-	roundTimer  time.Timer
+
+	roundTimer *time.Timer
+
+	ticker *time.Ticker
 }
 
 func NewManager(code, ownerId string, prop properties.Properties) *GameManager {
@@ -25,7 +28,7 @@ func NewManager(code, ownerId string, prop properties.Properties) *GameManager {
 			},
 			Users:   make(map[string]*user.User, 0),
 			OwnerId: ownerId,
-			status:  Wait,
+			status:  WaitStart,
 		},
 	}
 }
@@ -43,6 +46,22 @@ func (m *GameManager) UpdateAll() {
 			continue
 		}
 	}
+}
+
+func (m *GameManager) Start() error {
+	m.state.status = Running
+	m.roundTimer = time.NewTimer(time.Duration(m.state.Properties.TimerDuration))
+	return nil
+}
+
+func (m *GameManager) FinishRound() error {
+	//todo create new obj round and set current question
+	if m.state.NumberOfRound < 5 {
+		m.state.status = Dead
+		return ErrEndOfGame
+	}
+	m.state.NumberOfRound++
+	return nil
 }
 
 func (m *GameManager) HandleLeave(id string) error {
@@ -104,6 +123,14 @@ func (m *GameManager) check(user *user.User) error {
 	return nil
 }
 
+func (m *GameManager) IsRoundFinishCh() <-chan time.Time {
+	return m.roundTimer.C
+}
+
+func (m *GameManager) TickerUpdateCh() <-chan time.Time {
+	return m.ticker.C
+}
+
 func (m *GameManager) leaveFromRoom(id string) error {
 	u, ok := m.state.Users[id]
 	if !ok {
@@ -113,19 +140,21 @@ func (m *GameManager) leaveFromRoom(id string) error {
 	return nil
 }
 
-func (m *GameManager) Do(a actions.IAction) error {
+func (m *GameManager) Do(a actions.IAction) (err error) {
 	switch a.Type() {
 	case actions.AnswerType:
+		err = m.HandleAnswer(a)
 	case actions.ReadyType:
+		err = m.HandleReady(a)
 	case actions.CloseType:
+		err = m.HandleClose(a)
 	case actions.StartType:
+		err = m.HandleStart(a)
 	case actions.PingType:
-		if err := m.HandlePing(a); err != nil {
-			return err
-		}
+		err = m.HandlePing(a)
 
 	default:
 		return ErrUndefinedAction
 	}
-	return nil
+	return
 }
