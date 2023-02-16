@@ -1,7 +1,7 @@
 package room
 
 import (
-	"brillian_voice_back/internal/domain/entity/actions"
+	"brillian_voice_back/internal/domain/entity/fsm"
 	"brillian_voice_back/internal/domain/entity/gameManager"
 	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/domain/entity/user"
@@ -14,12 +14,12 @@ type Room struct {
 	manager *gameManager.GameManager
 	mu      *sync.RWMutex
 
-	actionCh chan actions.IAction
+	actionCh chan fsm.IAction
 	leaveCh  chan string
 	errCh    chan error
 }
 
-func (r *Room) OperationChannel() chan actions.IAction {
+func (r *Room) OperationChannel() chan fsm.IAction {
 	return r.actionCh
 }
 
@@ -38,7 +38,7 @@ func (r *Room) GetState() gameManager.GameState {
 func NewRoom(code, ownerId string, prop properties.Properties) *Room {
 	return &Room{
 		manager:  gameManager.NewManager(code, ownerId, prop),
-		actionCh: make(chan actions.IAction, 0),
+		actionCh: make(chan fsm.IAction, 0),
 		leaveCh:  make(chan string),
 		errCh:    make(chan error),
 

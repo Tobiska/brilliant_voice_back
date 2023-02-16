@@ -1,7 +1,7 @@
 package conn
 
 import (
-	"brillian_voice_back/internal/domain/entity/actions"
+	"brillian_voice_back/internal/domain/entity/fsm"
 	"encoding/json"
 	"errors"
 )
@@ -14,24 +14,24 @@ type TypeAction struct {
 	Type string `json:"action"`
 }
 
-func (pc *PlayerConn) UnmarshalAction(msg []byte) (actions.IAction, error) {
+func (pc *PlayerConn) UnmarshalAction(msg []byte) (fsm.IAction, error) {
 	ta := &TypeAction{}
 	if err := json.Unmarshal(msg, ta); err != nil {
 		return nil, err
 	}
-	var a actions.IAction
+	var a fsm.IAction
 
 	switch ta.Type {
-	case string(actions.PingType):
-		a = &actions.Ping{}
-	case string(actions.ReadyType):
-		a = &actions.Ready{}
-	case string(actions.AnswerType):
-		a = &actions.Answer{}
-	case string(actions.CloseType):
-		a = &actions.Close{}
-	case string(actions.StartType):
-		a = &actions.Start{}
+	case string(fsm.PingType):
+		a = &fsm.Ping{}
+	case string(fsm.ReadyType):
+		a = &fsm.Ready{}
+	case string(fsm.AnswerType):
+		a = &fsm.Answer{}
+	case string(fsm.CloseType):
+		a = &fsm.Close{}
+	case string(fsm.StartType):
+		a = &fsm.Start{}
 	default:
 		return nil, ErrUndefinedAction
 	}

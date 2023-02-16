@@ -1,4 +1,4 @@
-package actions
+package fsm
 
 import "fmt"
 

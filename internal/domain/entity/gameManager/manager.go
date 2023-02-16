@@ -1,7 +1,7 @@
 package gameManager
 
 import (
-	"brillian_voice_back/internal/domain/entity/actions"
+	"brillian_voice_back/internal/domain/entity/fsm"
 	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/domain/entity/user"
 	"github.com/rs/zerolog/log"
@@ -140,17 +140,17 @@ func (m *GameManager) leaveFromRoom(id string) error {
 	return nil
 }
 
-func (m *GameManager) Do(a actions.IAction) (err error) {
+func (m *GameManager) Do(a fsm.IAction) (err error) {
 	switch a.Type() {
-	case actions.AnswerType:
+	case fsm.AnswerType:
 		err = m.HandleAnswer(a)
-	case actions.ReadyType:
+	case fsm.ReadyType:
 		err = m.HandleReady(a)
-	case actions.CloseType:
+	case fsm.CloseType:
 		err = m.HandleClose(a)
-	case actions.StartType:
+	case fsm.StartType:
 		err = m.HandleStart(a)
-	case actions.PingType:
+	case fsm.PingType:
 		err = m.HandlePing(a)
 
 	default:
