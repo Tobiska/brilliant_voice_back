@@ -1,6 +1,7 @@
 package user
 
 import (
+	"fmt"
 	"github.com/rs/zerolog/log"
 )
 
@@ -9,6 +10,10 @@ type User struct {
 	Username string
 
 	conn IConn
+}
+
+func (u *User) String() string {
+	return fmt.Sprintf("id: %s, username: %s", u.ID, u.Username)
 }
 
 func NewUser(ID, username string, conn IConn) *User {

@@ -1,7 +1,7 @@
 package conn
 
 import (
-	"brillian_voice_back/internal/domain/entity/gameManager"
+	"brillian_voice_back/internal/domain/entity/fsm"
 	"brillian_voice_back/internal/domain/entity/user"
 	"strconv"
 )
@@ -18,7 +18,7 @@ type StateInf struct {
 	NumberOfRound int `json:"number_of_Round"`
 }
 
-func ToInfState(state gameManager.GameState) (StateInf, error) {
+func ToInfState(state fsm.Game) (StateInf, error) {
 	o, err := state.GetOwner()
 	if err != nil {
 		return StateInf{}, err

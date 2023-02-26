@@ -1,6 +1,8 @@
 package gameManager
 
-import "brillian_voice_back/internal/domain/entity/actions"
+import (
+	"brillian_voice_back/internal/domain/entity/actions"
+)
 
 func (m *GameManager) HandlePing(a actions.IAction) error {
 	p, _ := a.(*actions.Ping)
@@ -20,8 +22,11 @@ func (m *GameManager) HandleClose(a actions.IAction) error {
 
 func (m *GameManager) HandleStart(a actions.IAction) error {
 	s, _ := a.(*actions.Start)
-
-	return nil
+	if s.UserId != m.state.OwnerId {
+		return ErrUserIsNotOwner
+	} else {
+		return m.Start()
+	}
 }
 
 func (m *GameManager) HandleReady(a actions.IAction) error {

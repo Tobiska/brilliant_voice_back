@@ -2,6 +2,7 @@ package room
 
 import (
 	"brillian_voice_back/internal/domain/entity/actions"
+	"brillian_voice_back/internal/domain/entity/fsm"
 	"brillian_voice_back/internal/domain/entity/gameManager"
 	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/domain/entity/user"
@@ -31,7 +32,7 @@ func (r *Room) ErrorChannel() chan error {
 	return r.errCh
 }
 
-func (r *Room) GetState() gameManager.GameState {
+func (r *Room) GetState() fsm.Game {
 	return r.manager.State()
 }
 
@@ -53,7 +54,7 @@ func (r *Room) notifyAll() {
 		Msg("updated all player connections")
 }
 
-func (r *Room) Desc() gameManager.Descriptor {
+func (r *Room) Desc() fsm.Descriptor {
 	return r.manager.GameDesc()
 }
 
@@ -62,16 +63,6 @@ func (r *Room) Run() chan error {
 		defer r.Finish()
 		for {
 			select {
-			case <-r.manager.IsRoundFinishCh():
-				if err := r.manager.FinishRound(); err != nil {
-					log.Error().
-						Err(err).
-						Msg("error in time trans to next round")
-					break
-				} //todo add  errCh
-
-			case <-r.manager.TickerUpdateCh():
-				r.notifyAll()
 			case a := <-r.actionCh:
 				log.Info().
 					Str("room_id", r.Desc().Code).
