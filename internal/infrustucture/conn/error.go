@@ -9,10 +9,10 @@ const (
 	UndefinedCode = "UNDEFINED"
 )
 
-func (pc *PlayerConn) WriteError(err error) {
+func (pc *PlayerConn) WriteError(err error) error {
 	m := &ErrorMsg{
 		Msg:  err.Error(),
 		Code: UndefinedCode,
 	}
-	_ = pc.ws.WriteJSON(m)
+	return pc.ws.WriteJSON(m)
 }

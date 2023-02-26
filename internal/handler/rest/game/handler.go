@@ -71,7 +71,7 @@ func (h *Handler) createHandle(c *gin.Context) {
 	r.Run()
 	c.JSON(http.StatusCreated, gin.H{
 		"msg":       "successfully created the room", //todo mv to const msgs
-		"join_code": r.Desc().Code,
+		"join_code": body.ID,
 	})
 }
 
@@ -102,7 +102,7 @@ func (h *Handler) joinHandle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	u := user.NewUser(body.ID, body.Username, conn.NewPlayerConn(ws, r))
+	u := user.NewUser(body.ID, body.Username, conn.NewPlayerConn(ws))
 	ws.SetCloseHandler(func(code int, text string) error {
 		return u.DeleteAndClose()
 	})
