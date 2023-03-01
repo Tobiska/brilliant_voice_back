@@ -3,6 +3,7 @@ package states
 import (
 	"brillian_voice_back/internal/domain/entity/actions"
 	"brillian_voice_back/internal/domain/entity/fsm"
+	"brillian_voice_back/internal/domain/entity/game"
 )
 
 type Ready struct{}
@@ -13,7 +14,7 @@ func (r *Ready) Current() string {
 
 func (r *Ready) Wait() {}
 
-func (r *Ready) Send(g *fsm.Game, a fsm.IAction) fsm.IState {
+func (r *Ready) Send(g *game.Game, a fsm.IAction) fsm.IState {
 	if s, ok := a.(actions.Start); ok {
 		return handleStart(g, s)
 	}
@@ -23,7 +24,7 @@ func (r *Ready) Send(g *fsm.Game, a fsm.IAction) fsm.IState {
 	return &Ready{}
 }
 
-func handleStart(g *fsm.Game, a actions.Start) fsm.IState {
+func handleStart(g *game.Game, a actions.Start) fsm.IState {
 	if err := func() error {
 		if a.U.ID != g.OwnerId {
 			return ErrStartNotOwner
@@ -35,7 +36,7 @@ func handleStart(g *fsm.Game, a actions.Start) fsm.IState {
 	return &Ready{} //todo RunningRound
 }
 
-func handleLeaveUser(g *fsm.Game, a actions.LeaveUser) fsm.IState {
+func handleLeaveUser(g *game.Game, a actions.LeaveUser) fsm.IState {
 	if err := func() error {
 		return g.DeleteUser(a.U)
 	}; err != nil {

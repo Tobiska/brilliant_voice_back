@@ -1,6 +1,9 @@
 package states
 
-import "brillian_voice_back/internal/domain/entity/fsm"
+import (
+	"brillian_voice_back/internal/domain/entity/fsm"
+	"brillian_voice_back/internal/domain/entity/game"
+)
 
 type RoundRunning struct {
 }
@@ -9,7 +12,7 @@ func (r *RoundRunning) Current() string {
 	return "round_running"
 }
 
-func (r *RoundRunning) Send(g *fsm.Game, a fsm.IAction) fsm.IState {
+func (r *RoundRunning) Send(g *game.Game, a fsm.IAction) fsm.IState {
 	return nil
 }
 

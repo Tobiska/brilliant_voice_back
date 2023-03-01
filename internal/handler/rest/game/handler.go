@@ -2,9 +2,10 @@ package game
 
 import (
 	"brillian_voice_back/internal/domain/dto"
-	"brillian_voice_back/internal/domain/entity/user"
-	"brillian_voice_back/internal/domain/services/game"
+	"brillian_voice_back/internal/domain/entity/game"
+	gameSrv "brillian_voice_back/internal/domain/services/game"
 	"brillian_voice_back/internal/infrustucture/conn"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/schema"
@@ -26,10 +27,10 @@ var (
 )
 
 type Handler struct {
-	service *game.Service
+	service *gameSrv.Service
 }
 
-func NewHandler(service *game.Service) *Handler {
+func NewHandler(service *gameSrv.Service) *Handler {
 	return &Handler{
 		service: service,
 	}
@@ -102,20 +103,24 @@ func (h *Handler) joinHandle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	u := user.NewUser(body.ID, body.Username, conn.NewPlayerConn(ws))
+	c := conn.NewPlayerConn(ws, r.Desc(), r.ActionChannel())
+	u := game.NewUser(body.ID, body.Username, c.Adapter())
 	ws.SetCloseHandler(func(code int, text string) error {
-		return u.DeleteAndClose()
+		if r != nil {
+			return r.LeaveUser(u)
+		}
+		return errors.New("room is nil")
 	})
 	log.Info().
 		Str("id", body.ID).
 		Str("username", body.Username).
-		Str("room", r.Desc().Code).Msg("created new user and joined to room")
+		Str("room", r.Desc().Code).Msg("created new game and joined to room")
 	if err := r.JoinToRoom(u); err != nil { //todo (может получится что owner игру создаст но присоединиться не сможет)
 		log.Error().
 			Err(err).
 			Str("id", body.ID).
 			Str("room_code", r.Desc().Code).Msg("an error occurred while joining the room")
-		_ = u.Close() //todo mv to service layer
+		_ = c.Close()
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "%s", err)
 		return

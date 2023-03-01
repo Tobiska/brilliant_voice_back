@@ -1,15 +1,15 @@
 package actions
 
 import (
-	"brillian_voice_back/internal/domain/entity/user"
+	"brillian_voice_back/internal/domain/entity/game"
 	"fmt"
 )
 
 type Answer struct {
-	U    *user.User
+	U    *game.User
 	Text string
 }
 
 func (a Answer) String() string {
-	return fmt.Sprintf("answer text: %s user: %s", a.Text, a.U)
+	return fmt.Sprintf("answer text: %s game: %s", a.Text, a.U)
 }

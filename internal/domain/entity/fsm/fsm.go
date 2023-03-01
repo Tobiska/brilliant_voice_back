@@ -1,15 +1,16 @@
 package fsm
 
 import (
+	"brillian_voice_back/internal/domain/entity/game"
 	"errors"
 )
 
 type Fsm struct {
 	currentState IState
-	state        *Game
+	state        *game.Game
 }
 
-func InitFsm(initState IState, state *Game) *Fsm {
+func InitFsm(initState IState, state *game.Game) *Fsm {
 	return &Fsm{
 		currentState: initState,
 		state:        state,

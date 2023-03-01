@@ -1,8 +1,7 @@
 package conn
 
 import (
-	"brillian_voice_back/internal/domain/entity/fsm"
-	"brillian_voice_back/internal/domain/entity/user"
+	"brillian_voice_back/internal/domain/entity/game"
 	"strconv"
 )
 
@@ -18,7 +17,7 @@ type StateInf struct {
 	NumberOfRound int `json:"number_of_Round"`
 }
 
-func ToInfState(state fsm.Game) (StateInf, error) {
+func ToInfState(state game.Game) (StateInf, error) {
 	o, err := state.GetOwner()
 	if err != nil {
 		return StateInf{}, err
@@ -43,7 +42,7 @@ type UserInf struct {
 	Answer string `json:"answer"`
 }
 
-func toInfUsers(users map[string]*user.User) []UserInf {
+func toInfUsers(users map[string]*game.User) []UserInf {
 	usersInf := make([]UserInf, 0, len(users))
 	for _, u := range users {
 		usersInf = append(usersInf, UserInf{

@@ -3,7 +3,7 @@ package states
 import (
 	"brillian_voice_back/internal/domain/entity/actions"
 	"brillian_voice_back/internal/domain/entity/fsm"
-	"brillian_voice_back/internal/domain/entity/user"
+	"brillian_voice_back/internal/domain/entity/game"
 )
 
 type WaitStart struct{}
@@ -14,14 +14,14 @@ func (ws *WaitStart) Current() string {
 
 func (ws *WaitStart) Wait() {}
 
-func (ws *WaitStart) Send(g *fsm.Game, a fsm.IAction) fsm.IState {
+func (ws *WaitStart) Send(g *game.Game, a fsm.IAction) fsm.IState {
 	if ad, ok := a.(actions.AddUser); ok {
 		return handleAddUser(g, ad.U)
 	}
 	return &WaitStart{}
 }
 
-func handleAddUser(g *fsm.Game, u *user.User) fsm.IState {
+func handleAddUser(g *game.Game, u *game.User) fsm.IState {
 	if err := func() error {
 		if err := g.AddUser(u); err != nil {
 			return err

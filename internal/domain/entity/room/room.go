@@ -1,7 +1,9 @@
 package room
 
 import (
+	"brillian_voice_back/internal/domain/entity/actions"
 	"brillian_voice_back/internal/domain/entity/fsm"
+	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/gameManager"
 	"brillian_voice_back/internal/domain/entity/properties"
 	"github.com/rs/zerolog/log"
@@ -25,15 +27,19 @@ func NewRoom(code, ownerId string,
 }
 
 func (r *Room) Run() {
-	r.runReceiver()
-	r.runHandler()
+	r.pumpReceiver()
+	r.pumpHandler()
+}
+
+func (r *Room) Desc() game.Descriptor {
+	return r.manager.GameDesc()
 }
 
 func (r *Room) ActionChannel() chan fsm.IAction {
 	return r.actionCh
 }
 
-func (r *Room) runReceiver() {
+func (r *Room) pumpReceiver() {
 	go func() {
 		for {
 			if a, ok := <-r.actionCh; ok {
@@ -48,7 +54,7 @@ func (r *Room) runReceiver() {
 	}()
 }
 
-func (r *Room) runHandler() {
+func (r *Room) pumpHandler() {
 	go func() {
 		for {
 			a, err := r.queue.Pop()
@@ -69,12 +75,14 @@ func (r *Room) runHandler() {
 	}()
 }
 
-//func (r *Room) JoinToRoom(u *user.User) error {
-//	r.mu.Lock()
-//	defer r.mu.Unlock()
-//	if err := r.manager.AddUser(u); err != nil {
-//		return err
-//	}
-//	r.notifyAll()
-//	return nil
-//}
+func (r *Room) JoinToRoom(u *game.User) error {
+	return r.manager.Do(&actions.AddUser{
+		U: u,
+	})
+}
+
+func (r *Room) LeaveUser(u *game.User) error {
+	return r.manager.Do(&actions.LeaveUser{
+		U: u,
+	})
+}

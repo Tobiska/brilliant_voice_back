@@ -2,7 +2,7 @@ package room
 
 import (
 	"brillian_voice_back/internal/domain/entity/fsm"
-	"brillian_voice_back/internal/domain/entity/user"
+	"brillian_voice_back/internal/domain/entity/game"
 	"errors"
 )
 
@@ -18,6 +18,6 @@ type (
 	}
 
 	IClientManager interface {
-		Join(user user.User)
+		Join(user game.User)
 	}
 )
