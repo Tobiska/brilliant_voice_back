@@ -19,6 +19,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.11.2 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
@@ -31,7 +32,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/ugorji/go/codec v1.2.9 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
-	golang.org/x/exp v0.0.0-20230304125523-9ff063c70017 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
