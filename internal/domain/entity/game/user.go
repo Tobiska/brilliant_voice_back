@@ -8,6 +8,8 @@ type User struct {
 	ID       string
 	Username string
 
+	Answer string
+
 	Conn IConn
 }
 

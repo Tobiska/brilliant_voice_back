@@ -15,12 +15,12 @@ type TypeAction struct {
 	Type string `json:"action"`
 }
 
-func (pc *PlayerConn) UnmarshalAction(msg []byte) (fsm.IAction, error) {
+func (pc *PlayerConn) UnmarshalAction(msg []byte) (fsm.IUserAction, error) {
 	ta := &TypeAction{}
 	if err := json.Unmarshal(msg, ta); err != nil {
 		return nil, err
 	}
-	var a fsm.IAction
+	var a fsm.IUserAction
 
 	switch ta.Type {
 	case "answer":

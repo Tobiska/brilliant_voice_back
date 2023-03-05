@@ -2,11 +2,7 @@ package conn
 
 import (
 	"brillian_voice_back/internal/domain/entity/game"
-	"errors"
-)
-
-var (
-	ErrDone = errors.New("error done")
+	"context"
 )
 
 type adapterConn struct {
@@ -14,14 +10,20 @@ type adapterConn struct {
 	ErrCh    chan error
 }
 
-func (a *adapterConn) UpdateGame(g game.Game) {
-	a.UpdateCh <- g
+func (a *adapterConn) UpdateGame(ctx context.Context, g game.Game) {
+	select {
+	case a.UpdateCh <- g:
+	case <-ctx.Done():
+	}
 }
 
-func (a *adapterConn) SendError(err error) {
-	a.ErrCh <- err
+func (a *adapterConn) SendError(ctx context.Context, err error) {
+	select {
+	case a.ErrCh <- err:
+	case <-ctx.Done():
+	}
 }
 
-func (a *adapterConn) Close() {
-	a.ErrCh <- ErrDone
+func (a *adapterConn) Close(ctx context.Context) {
+	a.SendError(ctx, game.ErrDone)
 }

@@ -6,9 +6,17 @@ import (
 )
 
 type LeaveUser struct {
-	U *game.User
+	Action
 }
 
 func (lu LeaveUser) String() string {
 	return fmt.Sprintf("leave game %s", lu.U)
+}
+
+func LeaveUserAction(u *game.User) LeaveUser {
+	return LeaveUser{
+		Action{
+			U: u,
+		},
+	}
 }

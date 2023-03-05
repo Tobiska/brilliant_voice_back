@@ -14,7 +14,7 @@ type PlayerConn struct {
 
 	roomDesc game.Descriptor
 
-	actionCh chan fsm.IAction
+	actionCh chan fsm.IUserAction
 	updateCh chan game.Game
 	errCh    chan error
 
@@ -29,7 +29,7 @@ func (pc *PlayerConn) Adapter() game.IConn {
 	}
 }
 
-func NewPlayerConn(ws *websocket.Conn, roomDesc game.Descriptor, actionCh chan fsm.IAction) *PlayerConn {
+func NewPlayerConn(ws *websocket.Conn, roomDesc game.Descriptor, actionCh chan fsm.IUserAction) *PlayerConn {
 	ctx, cancel := context.WithCancel(context.Background())
 	pc := &PlayerConn{
 		ws:       ws,
@@ -40,57 +40,50 @@ func NewPlayerConn(ws *websocket.Conn, roomDesc game.Descriptor, actionCh chan f
 		updateCh: make(chan game.Game),
 		errCh:    make(chan error),
 	}
-	pc.readPump()
-	pc.writePump()
-	pc.errorPump()
+	go pc.readPump()
+	go pc.writePump()
+	go pc.errorPump()
 	return pc
 }
 
 func (pc *PlayerConn) readPump() {
-	go func() {
-		for {
-			_, m, err := pc.ws.ReadMessage() //todo handle msg
-			if err != nil {
-				log.Error().Err(err)
-				return
-			}
-
-			a, err := pc.UnmarshalAction(m)
-			if err != nil {
-				log.Error().
-					Err(err).Msg("unmarshal action error")
-				_ = pc.WriteError(err)
-				continue
-			}
-
-			pc.actionCh <- a
+	for {
+		_, m, err := pc.ws.ReadMessage() //todo handle msg
+		if err != nil {
+			log.Error().Err(err)
+			return
 		}
-	}()
+
+		a, err := pc.UnmarshalAction(m)
+		if err != nil {
+			log.Error().
+				Err(err).Msg("unmarshal action error")
+			_ = pc.WriteError(err)
+			continue
+		}
+
+		pc.actionCh <- a
+	}
 }
 
 func (pc *PlayerConn) writePump() {
-	go func() {
-		for {
-			select {
-			case <-pc.ctxClose.Done():
-				return
-			case s, ok := <-pc.updateCh:
-				if !ok {
-					return
-				}
-				inf, err := ToInfState(s)
-				if err != nil {
-					log.Error().Err(err).Str("room_id", pc.roomDesc.Code).
-						Msg("error occur parse game state")
-					continue
-				}
-				if err := pc.ws.WriteJSON(inf); err != nil {
-					log.Error().Err(err).Str("room_id", pc.roomDesc.Code).Msg("error occur send state")
-					continue
-				}
+	for {
+		select {
+		case <-pc.ctxClose.Done():
+			return
+		case s := <-pc.updateCh:
+			inf, err := ToInfState(s)
+			if err != nil {
+				log.Error().Err(err).Str("room_id", pc.roomDesc.Code).
+					Msg("error occur parse game state")
+				continue
+			}
+			if err := pc.ws.WriteJSON(inf); err != nil {
+				log.Error().Err(err).Str("room_id", pc.roomDesc.Code).Msg("error occur send state")
+				continue
 			}
 		}
-	}()
+	}
 }
 
 func (pc *PlayerConn) Write(msg []byte) (int, error) {
@@ -101,21 +94,19 @@ func (pc *PlayerConn) Write(msg []byte) (int, error) {
 }
 
 func (pc *PlayerConn) errorPump() {
-	go func() {
-		for {
-			select {
-			case <-pc.ctxClose.Done():
-				if err := pc.Close(); err != nil {
-					log.Error().Err(err).Str("room_id", pc.roomDesc.Code).Msg("close error")
-				}
-			case err := <-pc.errCh:
-				if pc.handleError(err) {
-					pc.cancel()
-					return
-				}
+	for {
+		select {
+		case <-pc.ctxClose.Done():
+			if err := pc.Close(); err != nil {
+				log.Error().Err(err).Str("room_id", pc.roomDesc.Code).Msg("close error")
+			}
+		case err := <-pc.errCh:
+			if pc.handleError(err) {
+				pc.cancel()
+				return
 			}
 		}
-	}()
+	}
 }
 
 func (pc *PlayerConn) handleError(err error) bool {
@@ -123,11 +114,9 @@ func (pc *PlayerConn) handleError(err error) bool {
 		log.Error().Err(err).Str("room_id", pc.roomDesc.Code).Msg("error occur send error")
 	}
 
-	return errors.Is(err, ErrDone)
+	return errors.Is(err, game.ErrDone)
 }
 
 func (pc *PlayerConn) Close() error {
-	close(pc.errCh)
-	close(pc.updateCh)
 	return pc.ws.Close()
 }

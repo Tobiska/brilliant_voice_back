@@ -3,18 +3,13 @@ package room
 import (
 	"brillian_voice_back/internal/domain/entity/fsm"
 	"brillian_voice_back/internal/domain/entity/game"
-	"errors"
-)
-
-var (
-	ErrQueueIsEmpty = errors.New("queue is empty")
 )
 
 type (
 	IPriorityQueue interface {
-		Push(a fsm.IAction, p int64)
+		Deq() (*fsm.IUserAction, IPriorityQueue)
 		Size() int
-		Pop() (fsm.IAction, error)
+		Enq(*fsm.IUserAction) IPriorityQueue
 	}
 
 	IClientManager interface {

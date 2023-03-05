@@ -11,7 +11,7 @@ type IState interface {
 
 type IIdleState interface {
 	IState
-	Send(game *game.Game, a IAction) IState
+	Send(game *game.Game, a IUserAction) (IState, error)
 	Wait()
 }
 
@@ -22,4 +22,9 @@ type IActiveState interface {
 
 type IAction interface {
 	fmt.Stringer
+}
+
+type IUserAction interface {
+	IAction
+	User() *game.User
 }

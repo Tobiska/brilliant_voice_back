@@ -10,17 +10,25 @@ type Fsm struct {
 	state        *game.Game
 }
 
+func (f *Fsm) GameUpdateFmt() *game.Game {
+	f.state.Descriptor.Status = f.CurrentState().Current()
+	return f.state
+}
+
 func InitFsm(initState IState, state *game.Game) *Fsm {
-	return &Fsm{
+	f := &Fsm{
 		currentState: initState,
 		state:        state,
 	}
+	f.Transition(f.currentState)
+	return f
 }
 
-func (f *Fsm) SendAction(a IAction) error {
+func (f *Fsm) SendAction(a IUserAction) error {
 	if is, ok := f.currentState.(IIdleState); ok {
-		f.Transition(is.Send(f.state, a))
-		return nil
+		st, err := is.Send(f.state, a)
+		f.Transition(st)
+		return err
 	} else {
 		return errors.New("current state is not idle")
 	}
@@ -33,4 +41,8 @@ func (f *Fsm) Transition(s IState) {
 	} else if is, ok := f.currentState.(IIdleState); ok {
 		is.Wait()
 	}
+}
+
+func (f *Fsm) CurrentState() IState {
+	return f.currentState
 }

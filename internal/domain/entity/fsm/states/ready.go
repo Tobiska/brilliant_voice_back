@@ -14,33 +14,33 @@ func (r *Ready) Current() string {
 
 func (r *Ready) Wait() {}
 
-func (r *Ready) Send(g *game.Game, a fsm.IAction) fsm.IState {
+func (r *Ready) Send(g *game.Game, a fsm.IUserAction) (fsm.IState, error) {
 	if s, ok := a.(actions.Start); ok {
 		return handleStart(g, s)
 	}
 	if l, ok := a.(actions.LeaveUser); ok {
 		return handleLeaveUser(g, l)
 	}
-	return &Ready{}
+	return &Ready{}, nil
 }
 
-func handleStart(g *game.Game, a actions.Start) fsm.IState {
+func handleStart(g *game.Game, a actions.Start) (fsm.IState, error) {
 	if err := func() error {
 		if a.U.ID != g.OwnerId {
 			return ErrStartNotOwner
 		}
 		return nil
-	}; err != nil {
-		return &Ready{}
+	}(); err != nil {
+		return &Ready{}, err
 	}
-	return &Ready{} //todo RunningRound
+	return &Ready{}, nil //todo RunningRound
 }
 
-func handleLeaveUser(g *game.Game, a actions.LeaveUser) fsm.IState {
+func handleLeaveUser(g *game.Game, a actions.LeaveUser) (fsm.IState, error) {
 	if err := func() error {
 		return g.DeleteUser(a.U)
-	}; err != nil {
-		return &Dead{}
+	}(); err != nil {
+		return &Dead{}, err
 	}
-	return &Ready{} // todo mb wait start
+	return &WaitStart{}, nil
 }

@@ -24,10 +24,10 @@ func ToInfState(state game.Game) (StateInf, error) {
 	}
 	return StateInf{
 		NumberOfRound:   state.NumberOfRound,
-		Status:          string(state.Status()),
+		Status:          state.Status,
 		CurrentQuestion: state.CurrentQuestion,
 		Code:            state.Descriptor.Code,
-		Users:           toInfUsers(state.Users),
+		Users:           toInfUsers(state.Users.ToSlice()),
 		IsFully:         state.IsFully,
 		Properties: PropertiesInf{
 			CountPlayers: state.Properties.CountPlayers,
@@ -42,7 +42,7 @@ type UserInf struct {
 	Answer string `json:"answer"`
 }
 
-func toInfUsers(users map[string]*game.User) []UserInf {
+func toInfUsers(users []*game.User) []UserInf {
 	usersInf := make([]UserInf, 0, len(users))
 	for _, u := range users {
 		usersInf = append(usersInf, UserInf{

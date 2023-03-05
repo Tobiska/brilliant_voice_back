@@ -24,6 +24,7 @@ func (s *Service) CreateRoom(ctx context.Context, input *dto.InputCreateGameDto)
 		TimerDuration: input.TimeDurationRound,
 	})
 	if err != nil {
+		log.Error().Err(err)
 		return nil, err
 	}
 	log.Info().Str("room_code", r.Desc().Code).Msg("room has created")

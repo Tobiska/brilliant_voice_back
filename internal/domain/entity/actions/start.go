@@ -6,9 +6,17 @@ import (
 )
 
 type Start struct {
-	U *game.User
+	Action
 }
 
 func (s Start) String() string {
-	return fmt.Sprintf("start action")
+	return fmt.Sprintf("start Action")
+}
+
+func StartAction(u *game.User) Start {
+	return Start{
+		Action: Action{
+			U: u,
+		},
+	}
 }

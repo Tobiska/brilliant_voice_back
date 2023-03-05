@@ -2,6 +2,7 @@ package app
 
 import (
 	"brillian_voice_back/internal/domain/services/game"
+	"brillian_voice_back/internal/infrustucture/codeGenerator"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
@@ -20,7 +21,8 @@ func Run() {
 
 	e := gin.Default()
 
-	p := provider.NewProvider()
+	g := codeGenerator.NewGenerator(4)
+	p := provider.NewProvider(g, 5)
 	s := game.NewGameService(p)
 
 	h := handlers.NewHandler(s)

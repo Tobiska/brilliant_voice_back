@@ -1,7 +1,16 @@
 package game
 
+import (
+	"context"
+	"errors"
+)
+
+var (
+	ErrDone = errors.New("error done")
+)
+
 type IConn interface {
-	UpdateGame(Game)
-	SendError(error)
-	Close()
+	UpdateGame(context.Context, Game)
+	SendError(context.Context, error)
+	Close(context.Context)
 }

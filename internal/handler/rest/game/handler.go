@@ -72,7 +72,7 @@ func (h *Handler) createHandle(c *gin.Context) {
 	r.Run()
 	c.JSON(http.StatusCreated, gin.H{
 		"msg":       "successfully created the room", //todo mv to const msgs
-		"join_code": body.ID,
+		"join_code": r.Desc().Code,
 	})
 }
 

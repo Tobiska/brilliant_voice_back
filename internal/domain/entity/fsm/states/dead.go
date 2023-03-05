@@ -11,7 +11,7 @@ func (d *Dead) Current() string {
 	return "dead"
 }
 
-func (d *Dead) Send(g *game.Game, a fsm.IAction) fsm.IState {
+func (d *Dead) Send(_ *game.Game, _ fsm.IUserAction) fsm.IState {
 	return &Dead{}
 }
 

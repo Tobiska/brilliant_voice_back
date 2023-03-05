@@ -6,83 +6,82 @@ import (
 	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/gameManager"
 	"brillian_voice_back/internal/domain/entity/properties"
+	"context"
 	"github.com/rs/zerolog/log"
+)
+
+const (
+	BufferSize = 100
 )
 
 type Room struct {
 	manager  *gameManager.GameManager
-	queue    IPriorityQueue
-	actionCh chan fsm.IAction
+	actionCh chan fsm.IUserAction
+
+	cancelCtx context.Context
+	cancel    func()
 }
 
 func NewRoom(code, ownerId string,
 	prop properties.Properties,
-	q IPriorityQueue,
 ) *Room {
+	ctx, cancel := context.WithCancel(context.TODO())
 	return &Room{
-		manager:  gameManager.NewManager(code, ownerId, prop),
-		queue:    q,
-		actionCh: make(chan fsm.IAction, 0), //mb add buffer
+		cancelCtx: ctx,
+		cancel:    cancel,
+		manager:   gameManager.NewManager(code, ownerId, prop),
+		actionCh:  make(chan fsm.IUserAction, BufferSize), //mb add buffer
 	}
 }
 
 func (r *Room) Run() {
-	r.pumpReceiver()
-	r.pumpHandler()
+	go r.pumpReceiver()
 }
 
 func (r *Room) Desc() game.Descriptor {
-	return r.manager.GameDesc()
+	return r.manager.Game().Descriptor
 }
 
-func (r *Room) ActionChannel() chan fsm.IAction {
+func (r *Room) ActionChannel() chan fsm.IUserAction {
 	return r.actionCh
 }
 
 func (r *Room) pumpReceiver() {
-	go func() {
-		for {
-			if a, ok := <-r.actionCh; ok {
-				r.queue.Push(a, 1) // todo diff grad priority
-				log.Info().
-					Str("action", a.String()).
-					Int("size", r.queue.Size()).
-					Str("room_id", r.manager.GameDesc().Code).
-					Msg("pushed action")
-			}
+	for {
+		if err := r.cancelCtx.Err(); err != nil {
+			r.Clear()
+			return
 		}
-	}()
-}
 
-func (r *Room) pumpHandler() {
-	go func() {
-		for {
-			a, err := r.queue.Pop()
-			if err != nil {
-				break
-			}
-			if err == ErrQueueIsEmpty {
-				continue
-			}
-			if err := r.manager.Do(a); err != nil {
+		select {
+		case <-r.cancelCtx.Done():
+			r.Clear()
+			return
+		case a := <-r.actionCh:
+			log.Info().
+				Str("action", a.String()).
+				Str("room_id", r.manager.Game().Code).
+				Msg("handle action")
+			if err := r.manager.DoAsync(a); err != nil {
 				log.Error().
 					Err(err).
 					Str("action", a.String()).
-					Str("room_id", r.manager.GameDesc().Code).
+					Str("room_id", r.manager.Game().Code).
 					Msg("error handle action")
 			}
 		}
-	}()
+	}
 }
 
+func (r *Room) Clear() {
+	log.Error().
+		Str("room_id", r.manager.Game().Code).
+		Msg("room receiver stopped")
+}
 func (r *Room) JoinToRoom(u *game.User) error {
-	return r.manager.Do(&actions.AddUser{
-		U: u,
-	})
+	return r.manager.DoSync(actions.AddUserAction(u))
 }
 
 func (r *Room) LeaveUser(u *game.User) error {
-	return r.manager.Do(&actions.LeaveUser{
-		U: u,
-	})
+	return r.manager.DoSync(actions.LeaveUserAction(u))
 }
