@@ -9,7 +9,7 @@ import (
 	"os"
 
 	handlers "brillian_voice_back/internal/handler/rest/game"
-	"brillian_voice_back/internal/infrustucture/provider"
+	"brillian_voice_back/internal/infrustucture/roomProvider"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,7 +22,7 @@ func Run() {
 	e := gin.Default()
 
 	g := codeGenerator.NewGenerator(4)
-	p := provider.NewProvider(g, 5)
+	p := roomProvider.NewProvider(g, 5)
 	s := game.NewGameService(p)
 
 	h := handlers.NewHandler(s)

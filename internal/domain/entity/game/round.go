@@ -1,5 +1,11 @@
 package game
 
 type Round struct {
-	Question string
+	Question Question
+	Answers  map[string]string
+}
+
+type Question struct {
+	Text          string
+	CorrectAnswer string
 }

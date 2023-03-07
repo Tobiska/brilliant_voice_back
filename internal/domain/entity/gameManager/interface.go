@@ -5,6 +5,6 @@ import (
 	"context"
 )
 
-type IRoundProvider interface {
-	CreateRound(context.Context) (game.Round, error)
+type IRoundProvider interface { //todo может быть убрать в другое место
+	PrepareRounds(context.Context) ([]*game.Round, error)
 }

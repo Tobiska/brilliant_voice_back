@@ -11,17 +11,16 @@ import (
 )
 
 type GameManager struct {
-	roundProvider IRoundProvider
-
 	fsm *fsm.Fsm
 
 	mu *sync.Mutex
 }
 
-func NewManager(code, ownerId string, prop properties.Properties) *GameManager {
+func NewManager(code, ownerId string, prop properties.Properties, rounds []*game.Round) *GameManager {
 	return &GameManager{
 		mu: &sync.Mutex{},
 		fsm: fsm.InitFsm(&states.Created{}, &game.Game{
+			Rounds: rounds,
 			Descriptor: game.Descriptor{
 				Code:       code,
 				IsFully:    false,

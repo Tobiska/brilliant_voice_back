@@ -7,6 +7,8 @@ import (
 	"brillian_voice_back/internal/domain/entity/gameManager"
 	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/infrustucture/conn"
+	"brillian_voice_back/internal/infrustucture/roundsProvider/inmemory"
+	"context"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -47,10 +49,16 @@ func TestFsmStress(t *testing.T) {
 			exceptedState: "ready", //todo RunningRound
 		},
 	}
+
+	rs, err := inmemory.NewRoundProvider().PrepareRounds(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
 	m := gameManager.NewManager("test", "admin_code", properties.Properties{
 		CountPlayers:  2,
 		TimerDuration: 2,
-	})
+	}, rs)
 	for _, tc := range testDependCases {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, a := range tc.sendAction {

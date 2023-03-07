@@ -84,11 +84,14 @@ type Status string
 
 type Game struct {
 	Descriptor
-	Users           *Users
-	OwnerId         string
-	CurrentQuestion string
-	status          Status
+	Users   *Users
+	OwnerId string
+	status  Status
+
 	NumberOfRound   int
+	CurrentQuestion string
+
+	Rounds []*Round
 }
 
 func (g *Game) GetOwner() (*User, error) {

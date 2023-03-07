@@ -1,6 +1,7 @@
-package provider
+package roomProvider
 
 import (
+	"brillian_voice_back/internal/domain/entity/gameManager"
 	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/domain/entity/room"
 	"context"
@@ -15,19 +16,21 @@ var (
 )
 
 type Provider struct {
-	codeProvider ICodeRoomProvider
-	storage      map[string]*room.Room
-	mu           *sync.RWMutex
+	roundProvider gameManager.IRoundProvider
+	codeProvider  ICodeRoomProvider
+	storage       map[string]*room.Room
+	mu            *sync.RWMutex
 
 	limit int
 }
 
-func NewProvider(cp ICodeRoomProvider, limit int) *Provider {
+func NewProvider(cp ICodeRoomProvider, limit int, roundProvider gameManager.IRoundProvider) *Provider {
 	return &Provider{
-		storage:      make(map[string]*room.Room, 0),
-		codeProvider: cp,
-		mu:           &sync.RWMutex{},
-		limit:        limit,
+		storage:       make(map[string]*room.Room, 0),
+		codeProvider:  cp,
+		mu:            &sync.RWMutex{},
+		limit:         limit,
+		roundProvider: roundProvider,
 	}
 }
 
@@ -40,7 +43,7 @@ func (p *Provider) CreateRoom(ctx context.Context, ownerID string, properties pr
 	for {
 		code := p.codeProvider.Generate(ctx)
 		if _, ok := p.storage[code]; !ok {
-			p.storage[code] = room.NewRoom(code, ownerID, properties)
+			p.storage[code] = room.NewRoom(code, ownerID, properties, p.roundProvider)
 			return p.storage[code], nil
 		}
 	}

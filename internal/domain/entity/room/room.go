@@ -24,12 +24,13 @@ type Room struct {
 
 func NewRoom(code, ownerId string,
 	prop properties.Properties,
+	rounds []*game.Round,
 ) *Room {
 	ctx, cancel := context.WithCancel(context.TODO())
 	return &Room{
 		cancelCtx: ctx,
 		cancel:    cancel,
-		manager:   gameManager.NewManager(code, ownerId, prop),
+		manager:   gameManager.NewManager(code, ownerId, prop, rounds),
 		actionCh:  make(chan fsm.IUserAction, BufferSize), //mb add buffer
 	}
 }

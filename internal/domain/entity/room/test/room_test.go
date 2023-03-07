@@ -6,6 +6,8 @@ import (
 	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/domain/entity/room"
 	"brillian_voice_back/internal/infrustucture/conn"
+	"brillian_voice_back/internal/infrustucture/roundsProvider/inmemory"
+	"context"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -38,10 +40,14 @@ func TestJoin(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			rs, err := inmemory.NewRoundProvider().PrepareRounds(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
 			r := room.NewRoom("code", "admin_code", properties.Properties{
 				CountPlayers:  2,
 				TimerDuration: 1,
-			})
+			}, rs)
 			for _, u := range tc.users {
 				err := r.JoinToRoom(u)
 				if tc.valid {
@@ -61,12 +67,18 @@ func TestAsyncOneUser(t *testing.T) {
 	}
 	u := game.NewUser("admin_code", "admin", c)
 
+	rs, err := inmemory.NewRoundProvider().PrepareRounds(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	r := room.NewRoom("code", "admin_code", properties.Properties{
 		CountPlayers:  2,
 		TimerDuration: 5,
-	})
+	}, rs)
 	r.Run()
-	err := r.JoinToRoom(u)
+	err = r.JoinToRoom(u)
 	assert.NoError(t, err)
 
 	r.ActionChannel() <- actions.AddUserAction(u)
@@ -88,12 +100,18 @@ func TestAsyncManyUsers(t *testing.T) {
 	uf := game.NewUser("admin_code", "admin1", cf)
 	us := game.NewUser("admin_code", "admin2", cs)
 
+	rs, err := inmemory.NewRoundProvider().PrepareRounds(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	r := room.NewRoom("code", "admin_code", properties.Properties{
 		CountPlayers:  2,
 		TimerDuration: 5,
-	})
+	}, rs)
 	r.Run()
-	err := r.JoinToRoom(uf)
+	err = r.JoinToRoom(uf)
 	assert.NoError(t, err)
 
 	r.ActionChannel() <- actions.AddUserAction(uf)
@@ -117,12 +135,18 @@ func TestJoinUpdate(t *testing.T) {
 	uf := game.NewUser("admin_code", "admin1", cf)
 	us := game.NewUser("test", "test1", cs)
 
+	rs, err := inmemory.NewRoundProvider().PrepareRounds(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	r := room.NewRoom("code", "admin_code", properties.Properties{
 		CountPlayers:  2,
 		TimerDuration: 5,
-	})
+	}, rs)
 	r.Run()
-	err := r.JoinToRoom(uf)
+	err = r.JoinToRoom(uf)
 	assert.NoError(t, err)
 
 	r.ActionChannel() <- actions.AddUserAction(us)
