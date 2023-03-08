@@ -12,7 +12,7 @@ func (r *Ready) Current() string {
 	return "ready"
 }
 
-func (r *Ready) Wait() {}
+func (r *Ready) Wait(_ *game.Game) {}
 
 func (r *Ready) Send(g *game.Game, a fsm.IUserAction) (fsm.IState, error) {
 	if s, ok := a.(actions.Start); ok {
@@ -33,7 +33,8 @@ func handleStart(g *game.Game, a actions.Start) (fsm.IState, error) {
 	}(); err != nil {
 		return &Ready{}, err
 	}
-	return &Ready{}, nil //todo RunningRound
+	g.StartTimer()
+	return &RoundRunning{}, nil
 }
 
 func handleLeaveUser(g *game.Game, a actions.LeaveUser) (fsm.IState, error) {

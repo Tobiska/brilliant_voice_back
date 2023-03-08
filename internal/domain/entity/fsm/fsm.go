@@ -39,7 +39,7 @@ func (f *Fsm) Transition(s IState) {
 	if as, ok := f.currentState.(IActiveState); ok {
 		f.currentState = as.Run(f.state)
 	} else if is, ok := f.currentState.(IIdleState); ok {
-		is.Wait()
+		is.Wait(f.state)
 	}
 }
 

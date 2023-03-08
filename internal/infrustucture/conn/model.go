@@ -23,12 +23,11 @@ func ToInfState(state game.Game) (StateInf, error) {
 		return StateInf{}, err
 	}
 	return StateInf{
-		NumberOfRound:   state.NumberOfRound,
-		Status:          state.Status,
-		CurrentQuestion: state.CurrentQuestion,
-		Code:            state.Descriptor.Code,
-		Users:           toInfUsers(state.Users.ToSlice()),
-		IsFully:         state.IsFully,
+		NumberOfRound: state.NumberOfRound,
+		Status:        state.Status,
+		Code:          state.Descriptor.Code,
+		Users:         toInfUsers(state.Users.ToSlice()),
+		IsFully:       state.IsFully,
 		Properties: PropertiesInf{
 			CountPlayers: state.Properties.CountPlayers,
 			Time:         strconv.Itoa(state.Properties.TimerDuration),

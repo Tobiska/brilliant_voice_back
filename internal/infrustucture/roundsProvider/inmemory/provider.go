@@ -39,7 +39,7 @@ func (p *Provider) PrepareRounds(_ context.Context) ([]*game.Round, error) {
 	roundsVal := make([]game.Round, 5)
 	for i := 0; i < 5; i++ {
 		roundsVal[i].Question = questions[i]
-		roundsVal[i].Answers = make(map[string]string)
+		roundsVal[i].Answers = make(map[string]game.ResultAnswer)
 		rounds[i] = &roundsVal[i]
 	}
 	return rounds, nil

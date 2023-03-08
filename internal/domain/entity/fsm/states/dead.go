@@ -15,4 +15,4 @@ func (d *Dead) Send(_ *game.Game, _ fsm.IUserAction) fsm.IState {
 	return &Dead{}
 }
 
-func (d *Dead) Wait() {}
+func (d *Dead) Wait(_ *game.Game) {}

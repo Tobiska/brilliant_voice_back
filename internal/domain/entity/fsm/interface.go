@@ -12,7 +12,7 @@ type IState interface {
 type IIdleState interface {
 	IState
 	Send(game *game.Game, a IUserAction) (IState, error)
-	Wait()
+	Wait(g *game.Game)
 }
 
 type IActiveState interface {

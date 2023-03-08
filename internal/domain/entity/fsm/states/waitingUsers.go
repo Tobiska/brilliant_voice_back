@@ -7,7 +7,9 @@ import (
 	"errors"
 )
 
-type WaitUsers struct{}
+type WaitUsers struct {
+	numberOfReadyUser int
+}
 
 func (wu *WaitUsers) Current() string {
 	return "wait users"
@@ -22,7 +24,7 @@ func (wu *WaitUsers) Send(g *game.Game, a fsm.IUserAction) (fsm.IState, error) {
 		return wu.handleReady(g, r)
 	}
 
-	return &WaitUsers{}, nil
+	return wu, nil
 }
 
 func (wu *WaitUsers) handleLeaveUser(g *game.Game, a actions.LeaveUser) (fsm.IState, error) {
@@ -31,12 +33,16 @@ func (wu *WaitUsers) handleLeaveUser(g *game.Game, a actions.LeaveUser) (fsm.ISt
 	}(); errors.Is(err, game.ErrOwnerLeave) {
 		return &Dead{}, err
 	} else {
-		return &RoundRunning{}, err
+		return wu, err
 	}
 }
 
-func (wu *WaitUsers) handleReady(g *game.Game, a actions.Ready) (fsm.IState, error) {
-	return nil, nil
+func (wu *WaitUsers) handleReady(g *game.Game, _ actions.Ready) (fsm.IState, error) {
+	wu.numberOfReadyUser++
+	if wu.numberOfReadyUser >= g.Properties.CountPlayers {
+		return &RoundRunning{}, nil
+	}
+	return wu, nil
 }
 
-func (wu *WaitUsers) Wait() {}
+func (wu *WaitUsers) Wait(_ *game.Game) {}

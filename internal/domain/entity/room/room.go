@@ -5,6 +5,7 @@ import (
 	"brillian_voice_back/internal/domain/entity/fsm"
 	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/gameManager"
+	"brillian_voice_back/internal/domain/entity/logicTimer"
 	"brillian_voice_back/internal/domain/entity/properties"
 	"context"
 	"github.com/rs/zerolog/log"
@@ -18,6 +19,8 @@ type Room struct {
 	manager  *gameManager.GameManager
 	actionCh chan fsm.IUserAction
 
+	timerManager *logicTimer.Manager
+
 	cancelCtx context.Context
 	cancel    func()
 }
@@ -27,11 +30,13 @@ func NewRoom(code, ownerId string,
 	rounds []*game.Round,
 ) *Room {
 	ctx, cancel := context.WithCancel(context.TODO())
+	actionCh := make(chan fsm.IUserAction, BufferSize)
 	return &Room{
-		cancelCtx: ctx,
-		cancel:    cancel,
-		manager:   gameManager.NewManager(code, ownerId, prop, rounds),
-		actionCh:  make(chan fsm.IUserAction, BufferSize), //mb add buffer
+		cancelCtx:    ctx,
+		cancel:       cancel,
+		manager:      gameManager.NewManager(code, ownerId, prop, rounds),
+		timerManager: logicTimer.NewManager(ctx, actionCh),
+		actionCh:     actionCh, //mb add buffer
 	}
 }
 
@@ -53,7 +58,6 @@ func (r *Room) pumpReceiver() {
 			r.Clear()
 			return
 		}
-
 		select {
 		case <-r.cancelCtx.Done():
 			r.Clear()

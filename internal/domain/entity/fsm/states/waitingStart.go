@@ -12,7 +12,7 @@ func (ws *WaitStart) Current() string {
 	return "wait start"
 }
 
-func (ws *WaitStart) Wait() {}
+func (ws *WaitStart) Wait(_ *game.Game) {}
 
 func (ws *WaitStart) Send(g *game.Game, a fsm.IUserAction) (fsm.IState, error) {
 	if ad, ok := a.(actions.AddUser); ok {

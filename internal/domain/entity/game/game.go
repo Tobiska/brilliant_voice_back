@@ -88,8 +88,9 @@ type Game struct {
 	OwnerId string
 	status  Status
 
-	NumberOfRound   int
-	CurrentQuestion string
+	NumberOfRound int
+
+	Timer ITimer
 
 	Rounds []*Round
 }
@@ -100,6 +101,17 @@ func (g *Game) GetOwner() (*User, error) {
 	} else {
 		return nil, ErrOwnerYetNotJoined
 	}
+}
+
+func (g *Game) StartTimer() {
+	g.Timer.Start(context.Background(), TimerInfo{
+		TickerPeriod:  15000, //todo refactor
+		TimeOutPeriod: g.Properties.TimerDuration,
+	})
+}
+
+func (g *Game) StopTimer() {
+	g.Timer.Stop(context.Background())
 }
 
 func (g *Game) DeleteUser(u *User) error {

@@ -5,6 +5,7 @@ import (
 	"brillian_voice_back/internal/domain/entity/fsm"
 	"brillian_voice_back/internal/domain/entity/fsm/states"
 	"brillian_voice_back/internal/domain/entity/game"
+	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/infrustucture/conn"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -27,6 +28,58 @@ func TestCreatedState(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			f := fsm.InitFsm(tc.initState, &game.Game{})
 			assert.Equal(t, f.CurrentState(), tc.expectedState)
+		})
+	}
+}
+
+func TestRoundRunningState(t *testing.T) {
+	testCases := []struct {
+		name          string
+		initState     fsm.IState
+		expectedState fsm.IState
+		actions       []fsm.IUserAction
+		gameState     *game.Game
+	}{
+		{
+			name:          "AllAnswers",
+			initState:     &states.Ready{},
+			expectedState: &states.WaitUsers{},
+			gameState: TestGame("code",
+				"admin_code",
+				properties.Properties{CountPlayers: 2, TimerDuration: 5},
+				&game.User{ID: "admin_code", Conn: &conn.MockConn{}},
+				&game.User{ID: "test", Conn: &conn.MockConn{}},
+			),
+			actions: []fsm.IUserAction{
+				actions.StartAction(&game.User{ID: "admin_code", Conn: &conn.MockConn{}}), //for start timer
+				actions.AnswerAction(&game.User{ID: "admin_code", Conn: &conn.MockConn{}}, "text_admin"),
+				actions.AnswerAction(&game.User{ID: "test", Conn: &conn.MockConn{}}, "text_test"),
+			},
+		},
+		{
+			name:          "NotAllAnswers",
+			initState:     &states.Ready{},
+			expectedState: &states.RoundRunning{},
+			gameState: TestGame("code",
+				"admin_code",
+				properties.Properties{CountPlayers: 2, TimerDuration: 5},
+				&game.User{ID: "admin_code", Conn: &conn.MockConn{}},
+				&game.User{ID: "test", Conn: &conn.MockConn{}},
+			),
+			actions: []fsm.IUserAction{
+				actions.StartAction(&game.User{ID: "admin_code", Conn: &conn.MockConn{}}),
+				actions.AnswerAction(&game.User{ID: "admin_code", Conn: &conn.MockConn{}}, "text_admin"),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			f := fsm.InitFsm(tc.initState, tc.gameState)
+			for _, a := range tc.actions {
+				assert.NoError(t, f.SendAction(a))
+			}
+			assert.Equal(t, tc.expectedState, f.CurrentState())
 		})
 	}
 }
@@ -189,7 +242,7 @@ func TestWaitStartState(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			f := fsm.InitFsm(tc.initState, tc.gameState)
 			for _, a := range tc.actions {
-				f.SendAction(a)
+				_ = f.SendAction(a)
 			}
 			assert.Equal(t, tc.expectedState, f.CurrentState())
 		})
