@@ -46,7 +46,7 @@ func TestFsmStress(t *testing.T) {
 			sendAction: []fsm.IUserAction{
 				actions.AddUserAction(&game.User{ID: "admin_code", Conn: &conn.MockConn{}}),
 			},
-			exceptedState: "ready", //todo RunningRound
+			exceptedState: "running round", //todo RunningRound
 		},
 	}
 

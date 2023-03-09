@@ -3,3 +3,4 @@
    - [ ] В логах комнаты: room_id,
    - [ ] В логах playerConn: user_id
  - [ ] Конфигурация приложения(lib viper).
+ - [ ] Разделить логику ISystemAction IUserAction
