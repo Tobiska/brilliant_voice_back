@@ -3,6 +3,7 @@ package app
 import (
 	"brillian_voice_back/internal/domain/services/game"
 	"brillian_voice_back/internal/infrustucture/codeGenerator"
+	"brillian_voice_back/internal/infrustucture/roundsProvider/inmemory"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
@@ -21,8 +22,10 @@ func Run() {
 
 	e := gin.Default()
 
+	rp := inmemory.NewRoundProvider() //todo change to mongodb impl
+
 	g := codeGenerator.NewGenerator(4)
-	p := roomProvider.NewProvider(g, 5)
+	p := roomProvider.NewProvider(g, 5, rp)
 	s := game.NewGameService(p)
 
 	h := handlers.NewHandler(s)

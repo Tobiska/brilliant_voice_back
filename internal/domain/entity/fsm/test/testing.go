@@ -3,23 +3,18 @@ package test
 import (
 	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/properties"
+	"brillian_voice_back/internal/infrustucture/conn"
 	"brillian_voice_back/internal/infrustucture/roundsProvider/inmemory"
 	"context"
 )
 
 var (
-	Game = &game.Game{
-		Users:   game.NewUsersContainer(),
-		OwnerId: "admin_code",
-		Descriptor: game.Descriptor{
-			Code:    "code",
-			IsFully: false,
-			Properties: properties.Properties{
-				CountPlayers:  2,
-				TimerDuration: 5,
-			},
-		},
-	}
+	Game = TestGame("code",
+		"admin_code",
+		properties.Properties{CountPlayers: 2, TimerDuration: 5},
+		&game.User{ID: "admin_code", Conn: &conn.MockConn{}},
+		&game.User{ID: "test", Conn: &conn.MockConn{}},
+	)
 )
 
 type MockTimeAdapter struct {

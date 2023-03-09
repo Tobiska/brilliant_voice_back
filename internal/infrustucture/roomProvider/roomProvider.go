@@ -43,7 +43,11 @@ func (p *Provider) CreateRoom(ctx context.Context, ownerID string, properties pr
 	for {
 		code := p.codeProvider.Generate(ctx)
 		if _, ok := p.storage[code]; !ok {
-			p.storage[code] = room.NewRoom(code, ownerID, properties, p.roundProvider)
+			rounds, err := p.roundProvider.PrepareRounds(ctx)
+			if err != nil {
+				return nil, err
+			}
+			p.storage[code] = room.NewRoom(code, ownerID, properties, rounds)
 			return p.storage[code], nil
 		}
 	}

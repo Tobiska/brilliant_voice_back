@@ -96,7 +96,7 @@ func TestReadyState(t *testing.T) {
 		{
 			name:          "Start",
 			initState:     &states.Ready{},
-			expectedState: &states.Ready{}, //todo RoundRunning
+			expectedState: &states.RoundRunning{},
 			actions: []fsm.IUserAction{
 				actions.StartAction(&game.User{ID: "admin_code", Conn: &conn.MockConn{}}),
 			},
