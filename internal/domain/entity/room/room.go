@@ -16,8 +16,10 @@ const (
 )
 
 type Room struct {
-	manager  *gameManager.GameManager
-	actionCh chan fsm.IUserAction
+	manager *gameManager.GameManager
+
+	userActionCh   chan fsm.IUserAction
+	systemActionCh chan fsm.IUserAction
 
 	timerManager *logicTimer.Manager
 
@@ -28,15 +30,20 @@ type Room struct {
 func NewRoom(code, ownerId string,
 	prop properties.Properties,
 	rounds []*game.Round,
+	timerManager *logicTimer.Manager,
 ) *Room {
 	ctx, cancel := context.WithCancel(context.TODO())
 	actionCh := make(chan fsm.IUserAction, BufferSize)
+	systemCh := make(chan fsm.IUserAction, BufferSize)
+	timerManager.Init(ctx, systemCh)
+
 	return &Room{
-		cancelCtx:    ctx,
-		cancel:       cancel,
-		manager:      gameManager.NewManager(code, ownerId, prop, rounds),
-		timerManager: logicTimer.NewManager(ctx, actionCh),
-		actionCh:     actionCh, //mb add buffer
+		cancelCtx:      ctx,
+		cancel:         cancel,
+		manager:        gameManager.NewManager(code, ownerId, prop, rounds, timerManager.Adapter()),
+		timerManager:   timerManager,
+		userActionCh:   actionCh, //mb add buffer
+		systemActionCh: systemCh,
 	}
 }
 
@@ -49,7 +56,7 @@ func (r *Room) Desc() game.Descriptor {
 }
 
 func (r *Room) ActionChannel() chan fsm.IUserAction {
-	return r.actionCh
+	return r.userActionCh
 }
 
 func (r *Room) pumpReceiver() {
@@ -62,17 +69,29 @@ func (r *Room) pumpReceiver() {
 		case <-r.cancelCtx.Done():
 			r.Clear()
 			return
-		case a := <-r.actionCh:
+		case a := <-r.userActionCh:
 			log.Info().
-				Str("action", a.String()).
+				Str("user_action", a.String()).
 				Str("room_id", r.manager.Game().Code).
-				Msg("handle action")
+				Msg("handle user action")
 			if err := r.manager.DoAsync(a); err != nil {
 				log.Error().
 					Err(err).
-					Str("action", a.String()).
+					Str("user_action", a.String()).
 					Str("room_id", r.manager.Game().Code).
-					Msg("error handle action")
+					Msg("error handle user action")
+			}
+		case a := <-r.systemActionCh:
+			log.Info().
+				Str("system_action", a.String()).
+				Str("room_id", r.manager.Game().Code).
+				Msg("handle system action")
+			if err := r.manager.DoAsync(a); err != nil {
+				log.Error().
+					Err(err).
+					Str("system_action", a.String()).
+					Str("room_id", r.manager.Game().Code).
+					Msg("error handle system action")
 			}
 		}
 	}

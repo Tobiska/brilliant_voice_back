@@ -13,40 +13,33 @@ import (
 type Manager struct {
 	timer *LogicTimer
 
-	start chan game.TimerInfo
-	stop  chan struct{}
+	timerManagerCh chan game.TimerInfo
 
 	actionCh chan fsm.IUserAction
 
 	cancelCtx context.Context
 }
 
-func NewManager(cancelCtx context.Context, actionCh chan fsm.IUserAction) *Manager {
-	m := &Manager{
-		start:     make(chan game.TimerInfo),
-		stop:      make(chan struct{}),
-		cancelCtx: cancelCtx,
-		actionCh:  actionCh,
-	}
+func NewManager() *Manager {
+	return &Manager{}
+}
+
+// Init создаёт адаптер взаимодействующий с окружающим миром
+func (m *Manager) Init(ctx context.Context, actionCh chan fsm.IUserAction) {
+	m.actionCh = actionCh
+	m.cancelCtx = ctx
+	m.timerManagerCh = make(chan game.TimerInfo)
 	go m.run()
-	return m
 }
 
-func (m *Manager) StartCh() chan game.TimerInfo {
-	return m.start
-}
-
-func (m *Manager) StopCh() chan struct{} {
-	return m.stop
-}
-
-func (m *Manager) Close() {
-	close(m.stop)
-	close(m.start)
+func (m *Manager) Adapter() game.ITimer {
+	return &TimerAdapter{
+		CancelCtx: m.cancelCtx,
+		TimerCh:   m.timerManagerCh,
+	}
 }
 
 func (m *Manager) run() {
-	defer m.Close()
 	for {
 		if err := m.cancelCtx.Err(); err != nil {
 			log.Info().Msg("Timer manager closed")
@@ -56,10 +49,12 @@ func (m *Manager) run() {
 		case <-m.cancelCtx.Done():
 			log.Info().Msg("Timer manager closed")
 			return
-		case ti := <-m.start:
-			m.handleTimerStart(ti)
-		case <-m.stop:
-			m.handleTimerStop()
+		case ti := <-m.timerManagerCh:
+			if ti.StopFlag {
+				m.handleTimerStop()
+			} else {
+				m.handleTimerStart(ti)
+			}
 		}
 	}
 }

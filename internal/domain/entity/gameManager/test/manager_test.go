@@ -3,6 +3,7 @@ package test
 import (
 	"brillian_voice_back/internal/domain/entity/actions"
 	"brillian_voice_back/internal/domain/entity/fsm"
+	"brillian_voice_back/internal/domain/entity/fsm/test"
 	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/gameManager"
 	"brillian_voice_back/internal/domain/entity/properties"
@@ -44,9 +45,9 @@ func TestFsmStress(t *testing.T) {
 		{
 			name: "Ready",
 			sendAction: []fsm.IUserAction{
-				actions.AddUserAction(&game.User{ID: "admin_code", Conn: &conn.MockConn{}}),
+				actions.StartAction(&game.User{ID: "admin_code", Conn: &conn.MockConn{}}),
 			},
-			exceptedState: "running round", //todo RunningRound
+			exceptedState: "round_running",
 		},
 	}
 
@@ -58,7 +59,7 @@ func TestFsmStress(t *testing.T) {
 	m := gameManager.NewManager("test", "admin_code", properties.Properties{
 		CountPlayers:  2,
 		TimerDuration: 2,
-	}, rs)
+	}, rs, &test.MockTimeAdapter{})
 	for _, tc := range testDependCases {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, a := range tc.sendAction {

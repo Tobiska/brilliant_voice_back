@@ -22,11 +22,9 @@ type MockTimeAdapter struct {
 	timerRunning bool
 }
 
-func (a *MockTimeAdapter) Start(_ context.Context, _ game.TimerInfo) {
+func (a *MockTimeAdapter) Send(_ context.Context, _ game.TimerInfo) error {
 	a.timerRunning = true
-}
-func (a *MockTimeAdapter) Stop(_ context.Context) {
-	a.timerRunning = false
+	return nil
 }
 
 func (a *MockTimeAdapter) CheckTimer() bool {

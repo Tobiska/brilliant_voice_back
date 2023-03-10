@@ -10,35 +10,51 @@ import (
 )
 
 func TestLogicTimerTimeout(t *testing.T) {
+	testCtx := context.Background()
 	actionCh := make(chan fsm.IUserAction)
-	m := logicTimer.NewManager(context.Background(), actionCh)
-	m.StartCh() <- game.TimerInfo{
+	m := logicTimer.NewManager()
+	m.Init(testCtx, actionCh)
+	if err := m.Adapter().Send(testCtx, game.TimerInfo{
 		TimeOutPeriod: 5,
 		TickerPeriod:  5,
+	}); err != nil {
+		t.Fatal(err)
 	}
 	assert.NotNil(t, <-actionCh)
 }
 
 func TestLogicTimerStopped(t *testing.T) {
+	testCtx := context.Background()
 	actionCh := make(chan fsm.IUserAction)
-	m := logicTimer.NewManager(context.Background(), actionCh)
-	m.StartCh() <- game.TimerInfo{
+	m := logicTimer.NewManager()
+	m.Init(testCtx, actionCh)
+	if err := m.Adapter().Send(context.Background(), game.TimerInfo{
 		TimeOutPeriod: 10000000,
 		TickerPeriod:  5,
+	}); err != nil {
+		t.Fatal(err)
 	}
-	m.StopCh() <- struct{}{}
-	m.StopCh() <- struct{}{}
+	_ = m.Adapter().Send(context.Background(), game.TimerInfo{
+		StopFlag: true,
+	})
+	_ = m.Adapter().Send(context.Background(), game.TimerInfo{
+		StopFlag: true,
+	})
 }
 
 func TestManagerCancel(t *testing.T) {
 	cancelCtx, cancel := context.WithCancel(context.Background())
 	actionCh := make(chan fsm.IUserAction)
-	m := logicTimer.NewManager(cancelCtx, actionCh)
-	m.StartCh() <- game.TimerInfo{
+	m := logicTimer.NewManager()
+	m.Init(cancelCtx, actionCh)
+	if err := m.Adapter().Send(context.Background(), game.TimerInfo{
 		TimeOutPeriod: 10000000,
 		TickerPeriod:  5,
+	}); err != nil {
+		t.Fatal(err)
 	}
 	cancel()
-	_, ok := <-m.StopCh()
-	assert.False(t, ok)
+	assert.Error(t, m.Adapter().Send(context.Background(), game.TimerInfo{
+		StopFlag: true,
+	}))
 }

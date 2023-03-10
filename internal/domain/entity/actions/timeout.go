@@ -10,11 +10,11 @@ type Timeout struct { //todo timeout has no any user
 }
 
 func (t Timeout) String() string {
-	return fmt.Sprintf("Add game %s", t.U)
+	return fmt.Sprintf("Timeout %s", t.U)
 }
 
-func TimeoutAction(u *game.User) AddUser {
-	return AddUser{
+func TimeoutAction(u *game.User) Timeout {
+	return Timeout{
 		Action{
 			U: u,
 		},

@@ -16,11 +16,12 @@ type GameManager struct {
 	mu *sync.Mutex
 }
 
-func NewManager(code, ownerId string, prop properties.Properties, rounds []*game.Round) *GameManager {
+func NewManager(code, ownerId string, prop properties.Properties, rounds []*game.Round, adapter game.ITimer) *GameManager {
 	return &GameManager{
 		mu: &sync.Mutex{},
 		fsm: fsm.InitFsm(&states.Created{}, &game.Game{
 			Rounds: rounds,
+			Timer:  adapter,
 			Descriptor: game.Descriptor{
 				Code:       code,
 				IsFully:    false,
@@ -42,14 +43,14 @@ func (m *GameManager) DoAsync(a fsm.IUserAction) error {
 
 func (m *GameManager) NotifyError(err error, users ...*game.User) {
 	for _, u := range users {
-		ctx, _ := context.WithTimeout(context.Background(), 3*time.Millisecond)
+		ctx, _ := context.WithTimeout(context.Background(), 3*time.Millisecond) //todo avoid ctx leak
 		go u.Conn.SendError(ctx, err)
 	}
 }
 
 func (m *GameManager) UpdateState(g game.Game, users ...*game.User) {
 	for _, u := range users {
-		ctx, _ := context.WithTimeout(context.Background(), 3*time.Millisecond)
+		ctx, _ := context.WithTimeout(context.Background(), 3*time.Millisecond) //todo avoid ctx leak
 		u.Conn.UpdateGame(ctx, g)
 	}
 }

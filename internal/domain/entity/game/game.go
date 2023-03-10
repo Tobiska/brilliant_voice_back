@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ErrUserAlreadyExist  = errors.New("game with id is already exist")
+	ErrUserAlreadyExist  = errors.New("user with id is already exist")
 	ErrDeleteNoExist     = errors.New("game doesn't exist(deleting)")
 	ErrOwnerLeave        = errors.New("owner leave")
 	ErrOwnerYetNotJoined = errors.New("owner yet not joined")
@@ -103,15 +103,17 @@ func (g *Game) GetOwner() (*User, error) {
 	}
 }
 
-func (g *Game) StartTimer() {
-	g.Timer.Start(context.Background(), TimerInfo{
+func (g *Game) StartTimer() error {
+	return g.Timer.Send(context.Background(), TimerInfo{
 		TickerPeriod:  15000, //todo refactor
 		TimeOutPeriod: g.Properties.TimerDuration,
 	})
 }
 
-func (g *Game) StopTimer() {
-	g.Timer.Stop(context.Background())
+func (g *Game) StopTimer() error {
+	return g.Timer.Send(context.Background(), TimerInfo{
+		StopFlag: true,
+	})
 }
 
 func (g *Game) DeleteUser(u *User) error {

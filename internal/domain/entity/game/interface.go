@@ -6,8 +6,16 @@ import (
 )
 
 var (
-	ErrDone = errors.New("error done")
+	ErrDone          = errors.New("error done")
+	ErrTimerChClosed = errors.New("error start channel closed")
 )
+
+type TimerInfo struct {
+	TimeOutPeriod int
+	TickerPeriod  int
+
+	StopFlag bool
+}
 
 type (
 	IConn interface {
@@ -17,7 +25,6 @@ type (
 	}
 
 	ITimer interface {
-		Start(ctx context.Context, m TimerInfo)
-		Stop(ctx context.Context)
+		Send(ctx context.Context, m TimerInfo) error
 	}
 )
