@@ -7,7 +7,7 @@ import (
 
 type Answer struct {
 	Action
-	Text string
+	Text string `json:"text"`
 }
 
 func (a Answer) String() string {

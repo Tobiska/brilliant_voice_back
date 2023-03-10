@@ -63,6 +63,9 @@ func (r *RoundRunning) handleLeaveUser(g *game.Game, a actions.LeaveUser) (fsm.I
 	if err := func() error {
 		return g.DeleteUser(a.U)
 	}(); errors.Is(err, game.ErrOwnerLeave) {
+		if err := g.StopTimer(); err != nil {
+			return &Dead{}, err
+		}
 		return &Dead{}, err
 	} else {
 		return r, err

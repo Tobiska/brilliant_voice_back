@@ -108,7 +108,7 @@ func (g *Game) GetOwner() (*User, error) {
 
 func (g *Game) StartTimer() error {
 	return g.Timer.Send(context.Background(), TimerInfo{
-		TickerPeriod:  1000, //todo refactor
+		TickerPeriod:  10000, //todo refactor
 		TimeOutPeriod: g.Properties.TimerDuration,
 	})
 }
@@ -136,6 +136,11 @@ func (g *Game) AddUser(u *User) error {
 	if u == nil {
 		return errors.New("user is nil")
 	}
+
+	if g.Users.Len() >= g.Properties.CountPlayers {
+		return errors.New("there are already enough users to start the game")
+	}
+
 	if _, err := g.GetOwner(); err != nil && u.ID != g.OwnerId {
 		return err
 	}

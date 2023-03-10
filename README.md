@@ -5,3 +5,4 @@
  - [ ] Конфигурация приложения(lib viper).
  - [ ] Разделить логику ISystemAction IUserAction
  - [ ] В handler разграничить http statusCode и ошибки
+ - [ ] Timer, Ticker привести к нужному формату

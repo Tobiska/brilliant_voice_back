@@ -67,8 +67,8 @@ func (m *Manager) handleTimerStart(ti game.TimerInfo) {
 	m.timer = &LogicTimer{
 		cancelCtx: m.cancelCtx,
 		startTime: time.Now(),
-		ticker:    time.NewTicker(time.Duration(ti.TickerPeriod)),
-		timer:     time.NewTimer(time.Duration(ti.TimeOutPeriod)),
+		ticker:    time.NewTicker(time.Second),     //todo ti.Ticker * time.Millisec
+		timer:     time.NewTimer(10 * time.Second), //todo ti.Timeout * time.Millisec
 		actionCh:  m.actionCh,
 	}
 	go m.timer.runHandleTimeout()

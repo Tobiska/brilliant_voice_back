@@ -198,8 +198,6 @@ func TestWaitStartState(t *testing.T) {
 			initState:     &states.WaitStart{},
 			expectedState: &states.Ready{},
 			actions: []fsm.IUserAction{
-				actions.AddUserAction(&game.User{ID: "admin_code", Conn: &conn.MockConn{}}),
-
 				actions.AddUserAction(&game.User{ID: "test1", Conn: &conn.MockConn{}}),
 
 				actions.LeaveUserAction(&game.User{ID: "test1", Conn: &conn.MockConn{}}),

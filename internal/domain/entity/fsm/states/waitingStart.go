@@ -26,11 +26,9 @@ func (ws *WaitStart) Send(g *game.Game, a fsm.IUserAction) (fsm.IState, error) {
 
 func (ws *WaitStart) handleAddUser(g *game.Game, u *game.User) (fsm.IState, error) {
 	if tr, err := func() (bool, error) {
-		if err := g.AddUser(u); err != nil {
-			return false, err
-		}
+		err := g.AddUser(u)
 		if g.Users.Len() != g.Properties.CountPlayers {
-			return false, nil
+			return false, err
 		}
 		return true, nil
 	}(); !tr {

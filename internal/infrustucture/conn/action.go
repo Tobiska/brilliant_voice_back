@@ -8,7 +8,9 @@ import (
 )
 
 var (
-	ErrUndefinedAction = errors.New("undefined action type")
+	ErrUndefinedAction     = errors.New("undefined action type")
+	ErrDoesNotContainsType = errors.New("msg doesn't contains type")
+	ErrDoesNotContainsText = errors.New("msg answer doesn't contains text")
 )
 
 type TypeAction struct {
@@ -16,23 +18,27 @@ type TypeAction struct {
 }
 
 func (pc *PlayerConn) UnmarshalAction(msg []byte) (fsm.IUserAction, error) {
-	ta := &TypeAction{}
-	if err := json.Unmarshal(msg, ta); err != nil {
+	var bt map[string]string
+	if err := json.Unmarshal(msg, &bt); err != nil {
 		return nil, err
+	}
+	action, ex := bt["action"]
+	if !ex {
+		return nil, ErrDoesNotContainsType
 	}
 	var a fsm.IUserAction
 
-	switch ta.Type {
+	switch action {
 	case "answer":
-		a = actions.Answer{}
+		text, ex := bt["text"]
+		if !ex {
+			return nil, ErrDoesNotContainsText
+		}
+		a = actions.AnswerAction(pc.user, text)
 	case "start":
-		a = actions.Start{}
+		a = actions.StartAction(pc.user)
 	default:
 		return nil, ErrUndefinedAction
-	}
-
-	if err := json.Unmarshal(msg, a); err != nil {
-		return nil, err
 	}
 
 	return a, nil

@@ -13,6 +13,7 @@ type PlayerConn struct {
 	ws *websocket.Conn
 
 	roomDesc game.Descriptor
+	user     *game.User
 
 	actionCh chan fsm.IUserAction
 	updateCh chan game.Game
@@ -29,11 +30,10 @@ func (pc *PlayerConn) Adapter() game.IConn {
 	}
 }
 
-func NewPlayerConn(ws *websocket.Conn, roomDesc game.Descriptor, actionCh chan fsm.IUserAction) *PlayerConn {
+func NewPlayerConn(ws *websocket.Conn, actionCh chan fsm.IUserAction) *PlayerConn {
 	ctx, cancel := context.WithCancel(context.Background())
 	pc := &PlayerConn{
 		ws:       ws,
-		roomDesc: roomDesc,
 		actionCh: actionCh,
 		ctxClose: ctx,
 		cancel:   cancel,
@@ -44,6 +44,11 @@ func NewPlayerConn(ws *websocket.Conn, roomDesc game.Descriptor, actionCh chan f
 	go pc.writePump()
 	go pc.errorPump()
 	return pc
+}
+
+func (pc *PlayerConn) SetContextInfo(roomDesc game.Descriptor, user *game.User) {
+	pc.user = user
+	pc.roomDesc = roomDesc
 }
 
 func (pc *PlayerConn) readPump() {

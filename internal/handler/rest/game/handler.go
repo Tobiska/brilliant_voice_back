@@ -103,8 +103,9 @@ func (h *Handler) joinHandle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	c := conn.NewPlayerConn(ws, r.Desc(), r.ActionChannel())
+	c := conn.NewPlayerConn(ws, r.ActionChannel())
 	u := game.NewUser(body.ID, body.Username, c.Adapter())
+	c.SetContextInfo(r.Desc(), u)
 	ws.SetCloseHandler(func(code int, text string) error {
 		if r != nil {
 			return r.LeaveUser(u)
@@ -115,7 +116,7 @@ func (h *Handler) joinHandle(w http.ResponseWriter, req *http.Request) {
 		Str("id", body.ID).
 		Str("username", body.Username).
 		Str("room", r.Desc().Code).Msg("created new game and joined to room")
-	if err := r.JoinToRoom(u); err != nil { //todo (может получится что owner игру создаст но присоединиться не сможет)
+	if err := r.JoinToRoom(u); err != nil {
 		log.Error().
 			Err(err).
 			Str("id", body.ID).
