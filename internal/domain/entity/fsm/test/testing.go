@@ -2,7 +2,6 @@ package test
 
 import (
 	"brillian_voice_back/internal/domain/entity/game"
-	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/infrustucture/conn"
 	"brillian_voice_back/internal/infrustucture/roundsProvider/inmemory"
 	"context"
@@ -11,7 +10,7 @@ import (
 var (
 	Game = TestGame("code",
 		"admin_code",
-		properties.Properties{CountPlayers: 2, TimerDuration: 5},
+		game.Properties{CountPlayers: 2, TimerDuration: 5},
 		&game.User{ID: "admin_code", Conn: &conn.MockConn{}},
 		&game.User{ID: "test", Conn: &conn.MockConn{}},
 	)
@@ -31,7 +30,7 @@ func (a *MockTimeAdapter) CheckTimer() bool {
 	return a.timerRunning
 }
 
-func TestGame(code, ownerId string, prop properties.Properties, us ...*game.User) *game.Game {
+func TestGame(code, ownerId string, prop game.Properties, us ...*game.User) *game.Game {
 	usersContainer := game.NewUsersContainer()
 	for _, u := range us {
 		if err := usersContainer.Add(u); err != nil {

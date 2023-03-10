@@ -6,7 +6,6 @@ import (
 	"brillian_voice_back/internal/domain/entity/fsm/test"
 	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/gameManager"
-	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/infrustucture/conn"
 	"brillian_voice_back/internal/infrustucture/roundsProvider/inmemory"
 	"context"
@@ -56,7 +55,7 @@ func TestFsmStress(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := gameManager.NewManager("test", "admin_code", properties.Properties{
+	m := gameManager.NewManager("test", "admin_code", game.Properties{
 		CountPlayers:  2,
 		TimerDuration: 2,
 	}, rs, &test.MockTimeAdapter{})

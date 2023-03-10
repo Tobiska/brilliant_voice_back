@@ -4,7 +4,6 @@ import (
 	"brillian_voice_back/internal/domain/entity/actions"
 	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/logicTimer"
-	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/domain/entity/room"
 	"brillian_voice_back/internal/infrustucture/conn"
 	"brillian_voice_back/internal/infrustucture/roundsProvider/inmemory"
@@ -46,7 +45,7 @@ func TestJoin(t *testing.T) {
 				t.Fatal(err)
 			}
 			m := logicTimer.NewManager()
-			r := room.NewRoom("code", "admin_code", properties.Properties{
+			r := room.NewRoom("code", "admin_code", game.Properties{
 				CountPlayers:  2,
 				TimerDuration: 1,
 			}, rs, m)
@@ -76,7 +75,7 @@ func TestAsyncOneUser(t *testing.T) {
 	}
 
 	m := logicTimer.NewManager()
-	r := room.NewRoom("code", "admin_code", properties.Properties{
+	r := room.NewRoom("code", "admin_code", game.Properties{
 		CountPlayers:  2,
 		TimerDuration: 5,
 	}, rs, m)
@@ -110,7 +109,7 @@ func TestAsyncManyUsers(t *testing.T) {
 	}
 
 	m := logicTimer.NewManager()
-	r := room.NewRoom("code", "admin_code", properties.Properties{
+	r := room.NewRoom("code", "admin_code", game.Properties{
 		CountPlayers:  2,
 		TimerDuration: 5,
 	}, rs, m)
@@ -146,7 +145,7 @@ func TestJoinUpdate(t *testing.T) {
 	}
 
 	m := logicTimer.NewManager()
-	r := room.NewRoom("code", "admin_code", properties.Properties{
+	r := room.NewRoom("code", "admin_code", game.Properties{
 		CountPlayers:  2,
 		TimerDuration: 5,
 	}, rs, m)
@@ -176,7 +175,7 @@ func TestLogicTimer(t *testing.T) {
 	}
 
 	m := logicTimer.NewManager()
-	r := room.NewRoom("code", "admin_code", properties.Properties{
+	r := room.NewRoom("code", "admin_code", game.Properties{
 		CountPlayers:  1,
 		TimerDuration: 5,
 	}, rs, m)
@@ -211,7 +210,7 @@ func TestAnswers(t *testing.T) {
 	}
 
 	m := logicTimer.NewManager()
-	r := room.NewRoom("code", "admin_code", properties.Properties{
+	r := room.NewRoom("code", "admin_code", game.Properties{
 		CountPlayers:  2,
 		TimerDuration: 5000000000,
 	}, rs, m)

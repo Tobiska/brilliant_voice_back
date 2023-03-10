@@ -1,9 +1,9 @@
 package game
 
 import (
-	"brillian_voice_back/internal/domain/entity/properties"
 	"context"
 	"errors"
+	"time"
 )
 
 var (
@@ -11,6 +11,10 @@ var (
 	ErrDeleteNoExist     = errors.New("game doesn't exist(deleting)")
 	ErrOwnerLeave        = errors.New("owner leave")
 	ErrOwnerYetNotJoined = errors.New("owner yet not joined")
+)
+
+var (
+	defaultRestTime = time.Duration(0)
 )
 
 type Users struct {
@@ -80,15 +84,14 @@ func (us Users) Clear() {
 	}
 }
 
-type Status string
-
 type Game struct {
 	Descriptor
 	Users   *Users
 	OwnerId string
-	status  Status
 
 	NumberOfRound int
+
+	RestTime time.Duration
 
 	Timer ITimer
 
@@ -105,12 +108,13 @@ func (g *Game) GetOwner() (*User, error) {
 
 func (g *Game) StartTimer() error {
 	return g.Timer.Send(context.Background(), TimerInfo{
-		TickerPeriod:  15000, //todo refactor
+		TickerPeriod:  1000, //todo refactor
 		TimeOutPeriod: g.Properties.TimerDuration,
 	})
 }
 
 func (g *Game) StopTimer() error {
+	g.RestTime = defaultRestTime
 	return g.Timer.Send(context.Background(), TimerInfo{
 		StopFlag: true,
 	})
@@ -140,7 +144,6 @@ func (g *Game) AddUser(u *User) error {
 
 type Descriptor struct {
 	Code       string
-	IsFully    bool
-	Properties properties.Properties
+	Properties Properties
 	Status     string
 }

@@ -67,6 +67,7 @@ func (m *Manager) handleTimerStart(ti game.TimerInfo) {
 	m.timer = &LogicTimer{
 		cancelCtx: m.cancelCtx,
 		startTime: time.Now(),
+		ticker:    time.NewTicker(time.Duration(ti.TickerPeriod)),
 		timer:     time.NewTimer(time.Duration(ti.TimeOutPeriod)),
 		actionCh:  m.actionCh,
 	}
@@ -78,13 +79,13 @@ func (m *Manager) handleTimerStop() {
 		log.Warn().Msg("Timer still not running")
 		return
 	}
-
 	m.timer.stop()
 	m.timer = nil
 }
 
 type LogicTimer struct {
 	timer     *time.Timer
+	ticker    *time.Ticker
 	startTime time.Time
 
 	actionCh chan fsm.IUserAction
@@ -94,18 +95,29 @@ type LogicTimer struct {
 
 func (lt *LogicTimer) runHandleTimeout() {
 	defer lt.timer.Stop()
-	select {
-	case <-lt.cancelCtx.Done():
-		log.Info().Msg("Timer stopped")
-		return
-	case <-lt.timer.C:
-		log.Info().Msg("Timer handle timeout")
-		lt.actionCh <- actions.TimeoutAction(game.NewUser("***", "system", &conn.MockConn{})) //todo убрать костыль с системным юзером(*)
-		return
+	for {
+		if err := lt.cancelCtx.Err(); err != nil {
+			return
+		}
+		select {
+		case <-lt.cancelCtx.Done():
+			log.Info().Msg("Timer stopped")
+			return
+		case <-lt.ticker.C:
+			log.Info().Msg("Tick handle")
+			lt.actionCh <- actions.TickAction(
+				game.NewUser("***", "system", &conn.MockConn{}),
+				time.Now().Sub(lt.startTime)) //todo убрать костыль с системным юзером(*)
+		case <-lt.timer.C:
+			log.Info().Msg("Timer handle timeout")
+			lt.actionCh <- actions.TimeoutAction(game.NewUser("***", "system", &conn.MockConn{})) //todo убрать костыль с системным юзером(*)
+			return
+		}
 	}
 }
 
 func (lt *LogicTimer) stop() {
 	lt.timer.Stop()
+	lt.ticker.Stop()
 	log.Info().Str("time", time.Now().Sub(lt.startTime).String()).Msg("Current timer stopped")
 }

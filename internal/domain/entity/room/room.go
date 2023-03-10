@@ -6,7 +6,6 @@ import (
 	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/gameManager"
 	"brillian_voice_back/internal/domain/entity/logicTimer"
-	"brillian_voice_back/internal/domain/entity/properties"
 	"context"
 	"github.com/rs/zerolog/log"
 )
@@ -28,7 +27,7 @@ type Room struct {
 }
 
 func NewRoom(code, ownerId string,
-	prop properties.Properties,
+	prop game.Properties,
 	rounds []*game.Round,
 	timerManager *logicTimer.Manager,
 ) *Room {

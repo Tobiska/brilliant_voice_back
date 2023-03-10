@@ -1,6 +1,7 @@
 package test
 
 import (
+	"brillian_voice_back/internal/domain/entity/actions"
 	"brillian_voice_back/internal/domain/entity/fsm"
 	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/logicTimer"
@@ -16,11 +17,29 @@ func TestLogicTimerTimeout(t *testing.T) {
 	m.Init(testCtx, actionCh)
 	if err := m.Adapter().Send(testCtx, game.TimerInfo{
 		TimeOutPeriod: 5,
-		TickerPeriod:  5,
+		TickerPeriod:  6,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	assert.NotNil(t, <-actionCh)
+	a := <-actionCh
+	_, ok := a.(actions.Timeout)
+	assert.True(t, ok)
+}
+
+func TestLogicTimerTick(t *testing.T) {
+	testCtx := context.Background()
+	actionCh := make(chan fsm.IUserAction)
+	m := logicTimer.NewManager()
+	m.Init(testCtx, actionCh)
+	if err := m.Adapter().Send(testCtx, game.TimerInfo{
+		TimeOutPeriod: 100000000,
+		TickerPeriod:  10,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	a := <-actionCh
+	_, ok := a.(actions.Tick)
+	assert.True(t, ok)
 }
 
 func TestLogicTimerStopped(t *testing.T) {
@@ -29,7 +48,7 @@ func TestLogicTimerStopped(t *testing.T) {
 	m := logicTimer.NewManager()
 	m.Init(testCtx, actionCh)
 	if err := m.Adapter().Send(context.Background(), game.TimerInfo{
-		TimeOutPeriod: 10000000,
+		TimeOutPeriod: 10000000000000,
 		TickerPeriod:  5,
 	}); err != nil {
 		t.Fatal(err)
@@ -49,7 +68,7 @@ func TestManagerCancel(t *testing.T) {
 	m.Init(cancelCtx, actionCh)
 	if err := m.Adapter().Send(context.Background(), game.TimerInfo{
 		TimeOutPeriod: 10000000,
-		TickerPeriod:  5,
+		TickerPeriod:  100000000,
 	}); err != nil {
 		t.Fatal(err)
 	}

@@ -2,7 +2,7 @@ package game
 
 import (
 	"brillian_voice_back/internal/domain/dto"
-	"brillian_voice_back/internal/domain/entity/properties"
+	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/room"
 	"context"
 	"github.com/rs/zerolog/log"
@@ -19,7 +19,7 @@ func NewGameService(provider IGameProvider) *Service {
 }
 
 func (s *Service) CreateRoom(ctx context.Context, input *dto.InputCreateGameDto) (*room.Room, error) {
-	r, err := s.provider.CreateRoom(ctx, input.ID, properties.Properties{
+	r, err := s.provider.CreateRoom(ctx, input.ID, game.Properties{
 		CountPlayers:  input.CountPlayers,
 		TimerDuration: input.TimeDurationRound,
 	})

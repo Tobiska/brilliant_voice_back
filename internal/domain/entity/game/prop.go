@@ -1,4 +1,4 @@
-package properties
+package game
 
 type Properties struct {
 	CountPlayers  int

@@ -5,7 +5,6 @@ import (
 	"brillian_voice_back/internal/domain/entity/fsm"
 	"brillian_voice_back/internal/domain/entity/fsm/states"
 	"brillian_voice_back/internal/domain/entity/game"
-	"brillian_voice_back/internal/domain/entity/properties"
 	"brillian_voice_back/internal/infrustucture/conn"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -46,7 +45,7 @@ func TestRoundRunningState(t *testing.T) {
 			expectedState: &states.WaitUsers{},
 			gameState: TestGame("code",
 				"admin_code",
-				properties.Properties{CountPlayers: 2, TimerDuration: 5},
+				game.Properties{CountPlayers: 2, TimerDuration: 5},
 				&game.User{ID: "admin_code", Conn: &conn.MockConn{}},
 				&game.User{ID: "test", Conn: &conn.MockConn{}},
 			),
@@ -62,7 +61,7 @@ func TestRoundRunningState(t *testing.T) {
 			expectedState: &states.RoundRunning{},
 			gameState: TestGame("code",
 				"admin_code",
-				properties.Properties{CountPlayers: 2, TimerDuration: 5},
+				game.Properties{CountPlayers: 2, TimerDuration: 5},
 				&game.User{ID: "admin_code", Conn: &conn.MockConn{}},
 				&game.User{ID: "test", Conn: &conn.MockConn{}},
 			),

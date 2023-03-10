@@ -4,7 +4,6 @@ import (
 	"brillian_voice_back/internal/domain/entity/fsm"
 	"brillian_voice_back/internal/domain/entity/fsm/states"
 	"brillian_voice_back/internal/domain/entity/game"
-	"brillian_voice_back/internal/domain/entity/properties"
 	"context"
 	"sync"
 	"time"
@@ -16,7 +15,7 @@ type GameManager struct {
 	mu *sync.Mutex
 }
 
-func NewManager(code, ownerId string, prop properties.Properties, rounds []*game.Round, adapter game.ITimer) *GameManager {
+func NewManager(code, ownerId string, prop game.Properties, rounds []*game.Round, adapter game.ITimer) *GameManager {
 	return &GameManager{
 		mu: &sync.Mutex{},
 		fsm: fsm.InitFsm(&states.Created{}, &game.Game{
@@ -24,7 +23,6 @@ func NewManager(code, ownerId string, prop properties.Properties, rounds []*game
 			Timer:  adapter,
 			Descriptor: game.Descriptor{
 				Code:       code,
-				IsFully:    false,
 				Properties: prop,
 			},
 			Users:   game.NewUsersContainer(),

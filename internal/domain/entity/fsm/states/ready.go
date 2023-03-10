@@ -33,7 +33,9 @@ func handleStart(g *game.Game, a actions.Start) (fsm.IState, error) {
 	}(); err != nil {
 		return &Ready{}, err
 	}
-	g.StartTimer()
+	if err := g.StartTimer(); err != nil {
+		return &Dead{}, err
+	}
 	return &RoundRunning{}, nil
 }
 

@@ -1,8 +1,9 @@
 package roomProvider
 
 import (
+	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/gameManager"
-	"brillian_voice_back/internal/domain/entity/properties"
+	"brillian_voice_back/internal/domain/entity/logicTimer"
 	"brillian_voice_back/internal/domain/entity/room"
 	"context"
 	"errors"
@@ -34,7 +35,7 @@ func NewProvider(cp ICodeRoomProvider, limit int, roundProvider gameManager.IRou
 	}
 }
 
-func (p *Provider) CreateRoom(ctx context.Context, ownerID string, properties properties.Properties) (*room.Room, error) {
+func (p *Provider) CreateRoom(ctx context.Context, ownerID string, properties game.Properties) (*room.Room, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if len(p.storage) >= p.limit {
@@ -47,7 +48,7 @@ func (p *Provider) CreateRoom(ctx context.Context, ownerID string, properties pr
 			if err != nil {
 				return nil, err
 			}
-			p.storage[code] = room.NewRoom(code, ownerID, properties, rounds)
+			p.storage[code] = room.NewRoom(code, ownerID, properties, rounds, logicTimer.NewManager())
 			return p.storage[code], nil
 		}
 	}

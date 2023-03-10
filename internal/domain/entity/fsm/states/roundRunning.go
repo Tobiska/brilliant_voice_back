@@ -20,6 +20,10 @@ func (r *RoundRunning) Send(g *game.Game, a fsm.IUserAction) (fsm.IState, error)
 		return r.handleAnswer(g, an)
 	}
 
+	if t, ok := a.(actions.Tick); ok {
+		return r.handleTick(g, t)
+	}
+
 	if to, ok := a.(actions.Timeout); ok {
 		return r.handleTimeout(g, to)
 	}
@@ -38,7 +42,9 @@ func (r *RoundRunning) handleAnswer(g *game.Game, a actions.Answer) (fsm.IState,
 	}(); !isFinish {
 		return r, err
 	} else {
-		g.StopTimer()
+		if err := g.StopTimer(); err != nil {
+			return &Dead{}, err
+		}
 		return &WaitUsers{}, err
 	}
 }
@@ -46,6 +52,11 @@ func (r *RoundRunning) handleAnswer(g *game.Game, a actions.Answer) (fsm.IState,
 func (r *RoundRunning) handleTimeout(_ *game.Game, _ actions.Timeout) (fsm.IState, error) {
 	//todo проверить system user
 	return &WaitUsers{}, nil
+}
+
+func (r *RoundRunning) handleTick(g *game.Game, t actions.Tick) (fsm.IState, error) {
+	g.RestTime = t.RestOfTime
+	return r, nil
 }
 
 func (r *RoundRunning) handleLeaveUser(g *game.Game, a actions.LeaveUser) (fsm.IState, error) {
