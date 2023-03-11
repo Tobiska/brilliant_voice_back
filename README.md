@@ -9,3 +9,6 @@
  - [x] Action validation.
  - [ ] Recovery логика в рамках комнаты.
  - [ ] Обернуть ошибки на разных уровнях errors.Wrapf().
+ - [ ] Тесты для RoundRunning, WaitUsers, Results, Finished состояний
+ - [ ] Тесты для playerConn
+ - [ ] Полноценный функциональный тест Fsm
