@@ -201,7 +201,7 @@ func TestAnswers(t *testing.T) {
 		ErrCh:    make(chan error),
 	}
 	uf := game.NewUser("admin_code", "admin1", cf)
-	us := game.NewUser("test", "admin1", cs)
+	us := game.NewUser("test", "test", cs)
 
 	rs, err := inmemory.NewRoundProvider().PrepareRounds(context.Background())
 

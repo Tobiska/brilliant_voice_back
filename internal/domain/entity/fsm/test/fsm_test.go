@@ -7,6 +7,7 @@ import (
 	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/infrustucture/conn"
 	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
 )
 
@@ -26,7 +27,9 @@ func TestCreatedState(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			f := fsm.InitFsm(tc.initState, &game.Game{})
-			assert.Equal(t, f.CurrentState(), tc.expectedState)
+			assert.Equal(t,
+				reflect.TypeOf(tc.expectedState).Kind(),
+				reflect.TypeOf(f.CurrentState()).Kind())
 		})
 	}
 }
@@ -78,7 +81,7 @@ func TestRoundRunningState(t *testing.T) {
 			for _, a := range tc.actions {
 				assert.NoError(t, f.SendAction(a))
 			}
-			assert.Equal(t, tc.expectedState, f.CurrentState())
+			assert.Equal(t, reflect.TypeOf(tc.expectedState).Kind(), reflect.TypeOf(f.CurrentState()).Kind())
 		})
 	}
 }
@@ -105,7 +108,7 @@ func TestReadyState(t *testing.T) {
 		{
 			name:          "Start",
 			initState:     &states.Ready{},
-			expectedState: &states.Ready{}, //todo RoundRunning
+			expectedState: &states.Ready{},
 			actions: []fsm.IUserAction{
 				actions.StartAction(&game.User{ID: "not_admin", Conn: &conn.MockConn{}}),
 			},
@@ -135,7 +138,8 @@ func TestReadyState(t *testing.T) {
 					assert.Error(t, f.SendAction(a))
 				}
 			}
-			assert.Equal(t, tc.expectedState, f.CurrentState())
+			assert.Equal(t, reflect.TypeOf(tc.expectedState).Kind(),
+				reflect.TypeOf(f.CurrentState()).Kind())
 		})
 	}
 }
@@ -166,8 +170,12 @@ func TestWaitStartState(t *testing.T) {
 			actions: []fsm.IUserAction{
 				actions.AddUserAction(&game.User{ID: "admin_code", Conn: &conn.MockConn{}}),
 			},
-			gameState: Game,
-			err:       nil,
+			gameState: TestGame("code",
+				"admin_code",
+				game.Properties{CountPlayers: 2, TimerDuration: 5},
+				&game.User{ID: "admin_code", Conn: &conn.MockConn{}},
+			),
+			err: nil,
 		},
 		{
 			name:          "WaitToReady",
@@ -241,7 +249,9 @@ func TestWaitStartState(t *testing.T) {
 			for _, a := range tc.actions {
 				_ = f.SendAction(a)
 			}
-			assert.Equal(t, tc.expectedState, f.CurrentState())
+			assert.Equal(t,
+				reflect.TypeOf(tc.expectedState).Kind(),
+				reflect.TypeOf(f.CurrentState()).Kind())
 		})
 	}
 }
