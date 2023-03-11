@@ -37,13 +37,17 @@ func (wu *WaitUsers) handleLeaveUser(g *game.Game, a actions.LeaveUser) (fsm.ISt
 	}
 }
 
-func (wu *WaitUsers) handleReady(g *game.Game, _ actions.Ready) (fsm.IState, error) {
+func (wu *WaitUsers) handleReady(g *game.Game, r actions.Ready) (fsm.IState, error) {
+	if err := g.Users.MarkReady(r.User()); err != nil {
+		return wu, err
+	}
 	wu.numberOfReadyUser++
+
 	if wu.numberOfReadyUser >= g.Properties.CountPlayers {
-		g.NumberOfRound++
 		if err := g.StartTimer(); err != nil {
-			return nil, err
+			return &Dead{}, err
 		}
+		g.NumberOfRound++
 		return &RoundRunning{}, nil
 	}
 	return wu, nil

@@ -8,6 +8,7 @@ import (
 )
 
 type RoundRunning struct {
+	currentRound *game.Round
 }
 
 func (r *RoundRunning) Current() string {
@@ -35,17 +36,20 @@ func (r *RoundRunning) Send(g *game.Game, a fsm.IUserAction) (fsm.IState, error)
 }
 
 func (r *RoundRunning) handleAnswer(g *game.Game, a actions.Answer) (fsm.IState, error) {
-	if isFinish, err := func() (bool, error) {
-		err := g.Users.Answer(a.User(), g.Rounds[g.NumberOfRound].CommitAnswer(a.User(), a.Text)) //todo refactor
-		return len(g.Rounds[g.NumberOfRound].Answers) == g.Users.Len(), err
-	}(); !isFinish {
-		return r, err
-	} else {
-		if err := r.StopRound(g); err != nil {
-			return &Dead{}, err
-		}
-		return &WaitUsers{}, err
+	r.currentRound.CommitAnswer(a.User(), a.Text)
+
+	if !(len(g.Rounds[g.NumberOfRound].Answers) == g.Users.Len()) {
+		return r, nil
 	}
+
+	if err := r.StopRound(g); err != nil {
+		return &Dead{}, err
+	}
+
+	if g.NumberOfRound == len(g.Rounds)-1 {
+		return &Results{}, nil
+	}
+	return &WaitUsers{}, nil
 }
 
 func (r *RoundRunning) StopRound(g *game.Game) error {
@@ -75,5 +79,6 @@ func (r *RoundRunning) handleLeaveUser(g *game.Game, a actions.LeaveUser) (fsm.I
 	}
 }
 
-func (r *RoundRunning) Wait(_ *game.Game) {
+func (r *RoundRunning) Wait(g *game.Game) {
+	r.currentRound = g.Rounds[g.NumberOfRound]
 }

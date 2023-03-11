@@ -12,6 +12,8 @@ var (
 	ErrDeleteNoExist     = errors.New("game doesn't exist(deleting)")
 	ErrOwnerLeave        = errors.New("owner leave")
 	ErrOwnerYetNotJoined = errors.New("owner yet not joined")
+	ErrUsersEnough       = errors.New("there are already enough users to start the game")
+	ErrUserIsNil         = errors.New("user is nil")
 )
 
 var (
@@ -30,18 +32,18 @@ func NewUsersContainer() *Users {
 	}
 }
 
-func (us Users) Answer(u *User, resultAnswer ResultAnswer) error {
-	if u, ok := us.cnt[u.ID]; ok {
-		u.Answer = &resultAnswer
-		return nil
-	} else {
-		return ErrUserDoesNotExist
-	}
-}
-
 func (us Users) Reset() {
 	for _, u := range us.cnt {
 		u.Reset()
+	}
+}
+
+func (us Users) MarkReady(u *User) error {
+	if u, ex := us.cnt[u.ID]; ex {
+		u.Ready = true
+		return nil
+	} else {
+		return ErrUserDoesNotExist
 	}
 }
 
@@ -140,11 +142,11 @@ func (g *Game) DeleteUser(u *User) error {
 
 func (g *Game) AddUser(u *User) error {
 	if u == nil {
-		return errors.New("user is nil")
+		return ErrUserIsNil
 	}
 
 	if g.Users.Len() >= g.Properties.CountPlayers {
-		return errors.New("there are already enough users to start the game")
+		return ErrUsersEnough
 	}
 
 	if _, err := g.GetOwner(); err != nil && u.ID != g.OwnerId {

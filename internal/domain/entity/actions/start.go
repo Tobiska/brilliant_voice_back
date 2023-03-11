@@ -10,7 +10,7 @@ type Start struct {
 }
 
 func (s Start) String() string {
-	return fmt.Sprintf("start Action")
+	return fmt.Sprintf("start action")
 }
 
 func StartAction(u *game.User) Start {

@@ -2,6 +2,7 @@ package conn
 
 import (
 	"brillian_voice_back/internal/domain/entity/game"
+	"time"
 )
 
 type StateInf struct {
@@ -16,7 +17,7 @@ type StateInf struct {
 
 type RoundInf struct {
 	Question string `json:"question"`
-	Answers  map[string]string
+	Answers  map[string]ResultAnswer
 }
 
 func ToInfState(state game.Game) (StateInf, error) {
@@ -24,10 +25,13 @@ func ToInfState(state game.Game) (StateInf, error) {
 	if err != nil {
 		return StateInf{}, err
 	}
-	as := make(map[string]string)
+	as := make(map[string]ResultAnswer)
 
 	for u, a := range state.Rounds[state.NumberOfRound].Answers {
-		as[u] = a.TextAnswer
+		as[u] = ResultAnswer{
+			TextAnswer: a.TextAnswer,
+			Result:     a.Result,
+		}
 	}
 
 	return StateInf{
@@ -35,7 +39,7 @@ func ToInfState(state game.Game) (StateInf, error) {
 		Status:        state.Status,
 		Code:          state.Descriptor.Code,
 		Users:         toInfUsers(state.Users.ToSlice()),
-		RestTime:      state.RestTime.String(),
+		RestTime:      state.RestTime.Truncate(time.Second).String(),
 		Rounds: RoundInf{
 			Question: state.Rounds[state.NumberOfRound].Question.Text,
 			Answers:  as,
@@ -45,9 +49,8 @@ func ToInfState(state game.Game) (StateInf, error) {
 }
 
 type UserInf struct {
-	Username string        `json:"name"`
-	Answer   *ResultAnswer `json:"answer,omitempty"`
-	Ready    bool          `json:"ready,omitempty"` //ready wait users
+	Username string `json:"name"`
+	Ready    bool   `json:"ready,omitempty"`
 }
 
 type ResultAnswer struct {
@@ -67,13 +70,6 @@ func toInfUser(u *game.User) UserInf {
 	ui := UserInf{
 		Username: u.Username,
 		Ready:    u.Ready,
-	}
-
-	if u.Answer != nil {
-		ui.Answer = &ResultAnswer{
-			TextAnswer: u.Answer.TextAnswer,
-			Result:     u.Answer.Result,
-		}
 	}
 	return ui
 }

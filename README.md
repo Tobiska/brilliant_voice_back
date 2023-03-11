@@ -1,10 +1,11 @@
 # Brilliant_voice_back
  - [ ] Обогащение логера контекстной информацией.
-   - [ ] В логах комнаты: room_id,
-   - [ ] В логах playerConn: user_id
+ - [ ] Выработать подход слияния контекстов(playerConn context + room context).
  - [ ] Конфигурация приложения(lib viper).
- - [ ] Разделить логику ISystemAction IUserAction
- - [ ] В handler разграничить http statusCode и ошибки
- - [ ] Timer, Ticker привести к нужному формату
- - [ ] gorilla/mux + Gin -> Fiber
- - [ ] action validation
+ - [ ] Разделить логику ISystemAction и IUserAction.
+ - [ ] В handler разграничить http statusCode и ошибки.
+ - [x] Timer, Ticker привести к нужному формату.
+ - [ ] Gorilla/mux + Gin -> Fiber.
+ - [x] Action validation.
+ - [ ] Recovery логика в рамках комнаты.
+ - [ ] Обернуть ошибки на разных уровнях errors.Wrapf().

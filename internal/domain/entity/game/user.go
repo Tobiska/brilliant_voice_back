@@ -8,8 +8,6 @@ type User struct {
 	ID       string
 	Username string
 
-	Answer *ResultAnswer
-
 	Ready bool
 
 	Conn IConn
@@ -28,6 +26,5 @@ func NewUser(ID, username string, conn IConn) *User {
 }
 
 func (u *User) Reset() {
-	u.Answer = nil
 	u.Ready = false
 }
