@@ -8,6 +8,7 @@ import (
 
 var (
 	ErrUserAlreadyExist  = errors.New("user with id is already exist")
+	ErrUserDoesNotExist  = errors.New("user doesn't exist in this room")
 	ErrDeleteNoExist     = errors.New("game doesn't exist(deleting)")
 	ErrOwnerLeave        = errors.New("owner leave")
 	ErrOwnerYetNotJoined = errors.New("owner yet not joined")
@@ -26,6 +27,21 @@ func NewUsersContainer() *Users {
 	return &Users{
 		cnt:         make(map[string]*User),
 		countAnswer: 0,
+	}
+}
+
+func (us Users) Answer(u *User, resultAnswer ResultAnswer) error {
+	if u, ok := us.cnt[u.ID]; ok {
+		u.Answer = &resultAnswer
+		return nil
+	} else {
+		return ErrUserDoesNotExist
+	}
+}
+
+func (us Users) Reset() {
+	for _, u := range us.cnt {
+		u.Reset()
 	}
 }
 
@@ -64,16 +80,6 @@ func (us Users) Add(u *User) error {
 	}
 }
 
-func (us Users) Answer(id, answer string) error {
-	if u, ok := us.cnt[id]; ok {
-		u.Answer = answer
-		us.countAnswer++
-		return nil
-	} else {
-		return ErrOwnerYetNotJoined
-	}
-}
-
 func (us Users) CheckAnswers() bool {
 	return len(us.cnt) == us.countAnswer
 }
@@ -108,8 +114,8 @@ func (g *Game) GetOwner() (*User, error) {
 
 func (g *Game) StartTimer() error {
 	return g.Timer.Send(context.Background(), TimerInfo{
-		TickerPeriod:  10000, //todo refactor
-		TimeOutPeriod: g.Properties.TimerDuration,
+		TickerPeriod:  3 * time.Second, //todo refactor
+		TimeOutPeriod: g.Properties.TimerDuration * time.Second,
 	})
 }
 

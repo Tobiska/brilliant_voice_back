@@ -15,13 +15,14 @@ type ResultAnswer struct {
 	Result     bool
 }
 
-func (r *Round) Answer(id string, answerText string) {
-	r.Answers[id] = ResultAnswer{
-		TextAnswer: answerText,
-		Result:     r.compareAnswers(r.Question.CorrectAnswer, answerText),
+func (r *Round) CommitAnswer(u *User, text string) ResultAnswer { //todo refactor
+	r.Answers[u.Username] = ResultAnswer{
+		TextAnswer: text,
+		Result:     r.CheckAnswer(text),
 	}
+	return r.Answers[u.Username]
 }
 
-func (r *Round) compareAnswers(correct, user string) bool {
-	return correct == user
+func (r *Round) CheckAnswer(user string) bool {
+	return r.Question.CorrectAnswer == user
 }

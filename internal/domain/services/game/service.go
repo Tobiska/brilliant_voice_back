@@ -6,6 +6,7 @@ import (
 	"brillian_voice_back/internal/domain/entity/room"
 	"context"
 	"github.com/rs/zerolog/log"
+	"time"
 )
 
 type Service struct {
@@ -21,7 +22,7 @@ func NewGameService(provider IGameProvider) *Service {
 func (s *Service) CreateRoom(ctx context.Context, input *dto.InputCreateGameDto) (*room.Room, error) {
 	r, err := s.provider.CreateRoom(ctx, input.ID, game.Properties{
 		CountPlayers:  input.CountPlayers,
-		TimerDuration: input.TimeDurationRound,
+		TimerDuration: time.Duration(input.TimeDurationRound),
 	})
 	if err != nil {
 		log.Error().Err(err)

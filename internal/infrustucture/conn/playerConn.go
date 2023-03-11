@@ -42,7 +42,6 @@ func NewPlayerConn(ws *websocket.Conn, actionCh chan fsm.IUserAction) *PlayerCon
 	}
 	go pc.readPump()
 	go pc.writePump()
-	go pc.errorPump()
 	return pc
 }
 
@@ -55,7 +54,7 @@ func (pc *PlayerConn) readPump() {
 	for {
 		_, m, err := pc.ws.ReadMessage() //todo handle msg
 		if err != nil {
-			log.Error().Err(err)
+			log.Error().Err(err).Msg("read message error")
 			return
 		}
 
@@ -75,6 +74,10 @@ func (pc *PlayerConn) writePump() {
 	for {
 		select {
 		case <-pc.ctxClose.Done():
+			if err := pc.Close(); err != nil {
+				log.Error().Err(err).Str("room_id", pc.roomDesc.Code).
+					Msg("error close websocket connection")
+			}
 			return
 		case s := <-pc.updateCh:
 			inf, err := ToInfState(s)
@@ -87,6 +90,10 @@ func (pc *PlayerConn) writePump() {
 				log.Error().Err(err).Str("room_id", pc.roomDesc.Code).Msg("error occur send state")
 				continue
 			}
+		case err := <-pc.errCh:
+			if pc.handleError(err) {
+				pc.cancel()
+			}
 		}
 	}
 }
@@ -96,22 +103,6 @@ func (pc *PlayerConn) Write(msg []byte) (int, error) {
 		return 0, err
 	}
 	return len(msg), nil
-}
-
-func (pc *PlayerConn) errorPump() {
-	for {
-		select {
-		case <-pc.ctxClose.Done():
-			if err := pc.Close(); err != nil {
-				log.Error().Err(err).Str("room_id", pc.roomDesc.Code).Msg("close error")
-			}
-		case err := <-pc.errCh:
-			if pc.handleError(err) {
-				pc.cancel()
-				return
-			}
-		}
-	}
 }
 
 func (pc *PlayerConn) handleError(err error) bool {

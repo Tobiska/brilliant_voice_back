@@ -8,7 +8,9 @@ type User struct {
 	ID       string
 	Username string
 
-	Answer string
+	Answer *ResultAnswer
+
+	Ready bool
 
 	Conn IConn
 }
@@ -23,4 +25,9 @@ func NewUser(ID, username string, conn IConn) *User {
 		Username: username,
 		Conn:     conn,
 	}
+}
+
+func (u *User) Reset() {
+	u.Answer = nil
+	u.Ready = false
 }

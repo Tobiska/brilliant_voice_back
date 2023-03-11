@@ -8,7 +8,6 @@ import (
 )
 
 type RoundRunning struct {
-	numberOfRound int
 }
 
 func (r *RoundRunning) Current() string {
@@ -37,16 +36,22 @@ func (r *RoundRunning) Send(g *game.Game, a fsm.IUserAction) (fsm.IState, error)
 
 func (r *RoundRunning) handleAnswer(g *game.Game, a actions.Answer) (fsm.IState, error) {
 	if isFinish, err := func() (bool, error) {
-		g.Rounds[r.numberOfRound].Answer(a.User().ID, a.Text)
-		return len(g.Rounds[r.numberOfRound].Answers) == g.Users.Len(), nil
+		err := g.Users.Answer(a.User(), g.Rounds[g.NumberOfRound].CommitAnswer(a.User(), a.Text)) //todo refactor
+		return len(g.Rounds[g.NumberOfRound].Answers) == g.Users.Len(), err
 	}(); !isFinish {
 		return r, err
 	} else {
-		if err := g.StopTimer(); err != nil {
+		if err := r.StopRound(g); err != nil {
 			return &Dead{}, err
 		}
 		return &WaitUsers{}, err
 	}
+}
+
+func (r *RoundRunning) StopRound(g *game.Game) error {
+	err := g.StopTimer()
+	g.Users.Reset()
+	return err
 }
 
 func (r *RoundRunning) handleTimeout(_ *game.Game, _ actions.Timeout) (fsm.IState, error) {
@@ -63,9 +68,7 @@ func (r *RoundRunning) handleLeaveUser(g *game.Game, a actions.LeaveUser) (fsm.I
 	if err := func() error {
 		return g.DeleteUser(a.U)
 	}(); errors.Is(err, game.ErrOwnerLeave) {
-		if err := g.StopTimer(); err != nil {
-			return &Dead{}, err
-		}
+		err := r.StopRound(g)
 		return &Dead{}, err
 	} else {
 		return r, err

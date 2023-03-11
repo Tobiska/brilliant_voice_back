@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"errors"
+	"time"
 )
 
 var (
@@ -11,8 +12,8 @@ var (
 )
 
 type TimerInfo struct {
-	TimeOutPeriod int
-	TickerPeriod  int
+	TimeOutPeriod time.Duration
+	TickerPeriod  time.Duration
 
 	StopFlag bool
 }

@@ -63,7 +63,7 @@ func (h *Handler) createHandle(c *gin.Context) {
 		Username:          body.Username,
 		ID:                body.ID,
 		CountPlayers:      body.CountPlayers,
-		TimeDurationRound: body.TimeDurationMin,
+		TimeDurationRound: body.TimeDurationSec,
 	})
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
