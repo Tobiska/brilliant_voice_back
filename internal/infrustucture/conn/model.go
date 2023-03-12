@@ -12,12 +12,12 @@ type StateInf struct {
 	Status        string    `json:"status"`
 	RestTime      string    `json:"rest_time"`
 	Rounds        RoundInf  `json:"round"`
-	NumberOfRound int       `json:"number_of_Round"`
+	NumberOfRound int       `json:"number_of_round"`
 }
 
 type RoundInf struct {
-	Question string `json:"question"`
-	Answers  map[string]ResultAnswer
+	Question string                  `json:"question"`
+	Answers  map[string]ResultAnswer `json:"answers"`
 }
 
 func ToInfState(state game.Game) (StateInf, error) {

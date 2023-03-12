@@ -6,11 +6,9 @@ import (
 	gameSrv "brillian_voice_back/internal/domain/services/game"
 	"brillian_voice_back/internal/infrustucture/conn"
 	"errors"
-	"fmt"
-	"github.com/fasthttp/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 	"github.com/rs/zerolog/log"
-	"net/http"
 )
 
 const (
@@ -18,11 +16,6 @@ const (
 	JoinPath     = "/ws/join/:code"
 	WsPrefixPath = "/ws"
 )
-
-var upgrader = websocket.FastHTTPUpgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
 
 type Handler struct {
 	service *gameSrv.Service
@@ -48,9 +41,7 @@ func (h *Handler) registerCreateRoom(e *fiber.App) {
 func (h *Handler) registerJoinRoom(e *fiber.App) {
 	e.Use(WsPrefixPath, h.WebSocketRequired)
 	e.Use(JoinPath, h.FindRoom)
-	e.Get(JoinPath, func(c *fiber.Ctx) error {
-		return h.joinHandle(c)
-	})
+	e.Get(JoinPath, websocket.New(h.joinHandle))
 }
 
 func (h *Handler) createHandle(c *fiber.Ctx) error {
@@ -85,25 +76,14 @@ func (h *Handler) createHandle(c *fiber.Ctx) error {
 	})
 }
 
-func (h *Handler) joinHandle(c *fiber.Ctx) error {
-	d, ok := c.Context().Value(JoinDtoKey).(dto.InputJoinGameDto)
-	if !ok {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "%s", errors.New("error type cast"))
-		return errors.New("error type cast")
-	}
+func (h *Handler) joinHandle(c *websocket.Conn) {
+	dtoVal := c.Locals(JoinDtoKey)
+	d, _ := dtoVal.(dto.InputJoinGameDto)
 
-	ws, err := upgrader.Upgrade()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "%s", err)
-		return err
-	}
-
-	c := conn.NewPlayerConn(ws, d.Room.ActionChannel())
-	u := game.NewUser(d.ID, d.Username, c.Adapter())
-	c.SetContextInfo(d.Room.Desc(), u)
-	ws.SetCloseHandler(func(code int, text string) error {
+	pc := conn.NewPlayerConn(c, d.Room.ActionChannel())
+	u := game.NewUser(d.ID, d.Username, pc.Adapter())
+	pc.SetContextInfo(d.Room.Desc(), u)
+	c.SetCloseHandler(func(code int, text string) error {
 		if d.Room != nil {
 			return d.Room.LeaveUser(u)
 		}
@@ -112,18 +92,14 @@ func (h *Handler) joinHandle(c *fiber.Ctx) error {
 	log.Info().
 		Str("id", d.ID).
 		Str("username", d.Username).
-		Str("room", d.Room.Desc().Code).Msg("created new game and joined to room")
+		Str("room", d.Room.Desc().Code).Msg("joined to room")
 	if err := d.Room.JoinToRoom(u); err != nil {
 		log.Error().
 			Err(err).
 			Str("id", d.ID).
 			Str("room_code", d.Room.Desc().Code).Msg("an error occurred while joining the room")
-		_ = c.Close()
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "%s", err)
-		return err
+		_ = pc.Close()
+		return
 	}
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "successfuly room created")
-	return nil
+	pc.Run()
 }

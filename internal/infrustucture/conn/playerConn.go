@@ -5,7 +5,7 @@ import (
 	"brillian_voice_back/internal/domain/entity/game"
 	"context"
 	"errors"
-	"github.com/fasthttp/websocket"
+	"github.com/gofiber/websocket/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -40,9 +40,12 @@ func NewPlayerConn(ws *websocket.Conn, actionCh chan fsm.IUserAction) *PlayerCon
 		updateCh: make(chan game.Game),
 		errCh:    make(chan error),
 	}
-	go pc.readPump()
-	go pc.writePump()
 	return pc
+}
+
+func (pc *PlayerConn) Run() {
+	go pc.writePump()
+	pc.readPump()
 }
 
 func (pc *PlayerConn) SetContextInfo(roomDesc game.Descriptor, user *game.User) {
@@ -52,7 +55,7 @@ func (pc *PlayerConn) SetContextInfo(roomDesc game.Descriptor, user *game.User) 
 
 func (pc *PlayerConn) readPump() {
 	for {
-		_, m, err := pc.ws.ReadMessage() //todo handle msg
+		_, m, err := pc.ws.ReadMessage()
 		if err != nil {
 			log.Error().Err(err).Msg("read message error")
 			return
@@ -71,13 +74,19 @@ func (pc *PlayerConn) readPump() {
 }
 
 func (pc *PlayerConn) writePump() {
+	defer func() {
+		if err := pc.Close(); err != nil {
+			log.Error().Err(err).Str("room_id", pc.roomDesc.Code).
+				Msg("error close websocket connection")
+		}
+	}()
 	for {
+		if err := pc.ctxClose.Err(); err != nil {
+			return
+		}
+
 		select {
 		case <-pc.ctxClose.Done():
-			if err := pc.Close(); err != nil {
-				log.Error().Err(err).Str("room_id", pc.roomDesc.Code).
-					Msg("error close websocket connection")
-			}
 			return
 		case s := <-pc.updateCh:
 			inf, err := ToInfState(s)
@@ -114,5 +123,6 @@ func (pc *PlayerConn) handleError(err error) bool {
 }
 
 func (pc *PlayerConn) Close() error {
+	_ = pc.ws.WriteMessage(websocket.CloseMessage, []byte{})
 	return pc.ws.Close()
 }

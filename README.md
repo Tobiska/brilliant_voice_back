@@ -1,5 +1,5 @@
 # Brilliant_voice_back
-- [ ] Gorilla/mux + Gin -> Fiber.
+- [x] Gorilla/mux + Gin -> Fiber.
 - [ ] Тесты для RoundRunning, WaitUsers, Results, Finished состояний
 - [ ] Тесты для playerConn 
 - [ ] Мульти-стейдж докер образ.
