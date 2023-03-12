@@ -5,7 +5,7 @@ import (
 	"brillian_voice_back/internal/domain/entity/game"
 	"context"
 	"errors"
-	"github.com/gorilla/websocket"
+	"github.com/fasthttp/websocket"
 	"github.com/rs/zerolog/log"
 )
 

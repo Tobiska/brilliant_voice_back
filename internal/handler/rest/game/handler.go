@@ -7,24 +7,22 @@ import (
 	"brillian_voice_back/internal/infrustucture/conn"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/schema"
-	"github.com/gorilla/websocket"
+	"github.com/fasthttp/websocket"
+	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
 const (
-	CreatePath = "/create"
-	JoinPath   = "/ws/join"
+	CreatePath   = "/create"
+	JoinPath     = "/ws/join/:code"
+	WsPrefixPath = "/ws"
 )
 
-var (
-	upgrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-	}
-)
+var upgrader = websocket.FastHTTPUpgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 type Handler struct {
 	service *gameSrv.Service
@@ -36,96 +34,96 @@ func NewHandler(service *gameSrv.Service) *Handler {
 	}
 }
 
-func (h *Handler) Register(e *gin.Engine) {
+func (h *Handler) Register(e *fiber.App) {
 	h.registerCreateRoom(e)
 	h.registerJoinRoom(e)
 }
 
-func (h *Handler) registerCreateRoom(e *gin.Engine) {
-	e.POST(CreatePath, func(c *gin.Context) {
-		h.createHandle(c)
+func (h *Handler) registerCreateRoom(e *fiber.App) {
+	e.Post(CreatePath, func(c *fiber.Ctx) error {
+		return h.createHandle(c)
 	})
 }
 
-func (h *Handler) registerJoinRoom(e *gin.Engine) {
-	e.GET(JoinPath, func(c *gin.Context) {
-		h.joinHandle(c.Writer, c.Request)
+func (h *Handler) registerJoinRoom(e *fiber.App) {
+	e.Use(WsPrefixPath, h.WebSocketRequired)
+	e.Use(JoinPath, h.FindRoom)
+	e.Get(JoinPath, func(c *fiber.Ctx) error {
+		return h.joinHandle(c)
 	})
 }
 
-func (h *Handler) createHandle(c *gin.Context) {
+func (h *Handler) createHandle(c *fiber.Ctx) error {
 	var body CreateInput
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.String(http.StatusUnprocessableEntity, "Is not valid error: %s", err.Error())
-		return
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
-	r, err := h.service.CreateRoom(c.Request.Context(), &dto.InputCreateGameDto{
+
+	if err := body.Validate(); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+
+	r, err := h.service.CreateRoom(c.Context(), &dto.InputCreateGameDto{
 		Username:          body.Username,
 		ID:                body.ID,
 		CountPlayers:      body.CountPlayers,
 		TimeDurationRound: body.TimeDurationSec,
 	})
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
 	r.Run()
-	c.JSON(http.StatusCreated, gin.H{
-		"msg":       "successfully created the room", //todo mv to const msgs
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":   "successfully created the room", //todo mv to const msgs
 		"join_code": r.Desc().Code,
 	})
 }
 
-var decoder = schema.NewDecoder()
-
-func (h *Handler) joinHandle(w http.ResponseWriter, req *http.Request) {
-	var body JoinInput
-	if err := decoder.Decode(&body, req.URL.Query()); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "%s", err)
-		return
-	}
-	r, err := h.service.JoinToRoom(req.Context(), &dto.InputJoinGameDto{
-		Username: body.Username,
-		ID:       body.ID,
-		Code:     body.Code,
-	})
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "%s", err)
-		return
+func (h *Handler) joinHandle(c *fiber.Ctx) error {
+	d, ok := c.Context().Value(JoinDtoKey).(dto.InputJoinGameDto)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "%s", errors.New("error type cast"))
+		return errors.New("error type cast")
 	}
 
-	ws, err := upgrader.Upgrade(w, req, nil)
+	ws, err := upgrader.Upgrade()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "%s", err)
-		return
+		return err
 	}
 
-	c := conn.NewPlayerConn(ws, r.ActionChannel())
-	u := game.NewUser(body.ID, body.Username, c.Adapter())
-	c.SetContextInfo(r.Desc(), u)
+	c := conn.NewPlayerConn(ws, d.Room.ActionChannel())
+	u := game.NewUser(d.ID, d.Username, c.Adapter())
+	c.SetContextInfo(d.Room.Desc(), u)
 	ws.SetCloseHandler(func(code int, text string) error {
-		if r != nil {
-			return r.LeaveUser(u)
+		if d.Room != nil {
+			return d.Room.LeaveUser(u)
 		}
 		return errors.New("room is nil")
 	})
 	log.Info().
-		Str("id", body.ID).
-		Str("username", body.Username).
-		Str("room", r.Desc().Code).Msg("created new game and joined to room")
-	if err := r.JoinToRoom(u); err != nil {
+		Str("id", d.ID).
+		Str("username", d.Username).
+		Str("room", d.Room.Desc().Code).Msg("created new game and joined to room")
+	if err := d.Room.JoinToRoom(u); err != nil {
 		log.Error().
 			Err(err).
-			Str("id", body.ID).
-			Str("room_code", r.Desc().Code).Msg("an error occurred while joining the room")
+			Str("id", d.ID).
+			Str("room_code", d.Room.Desc().Code).Msg("an error occurred while joining the room")
 		_ = c.Close()
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "%s", err)
-		return
+		return err
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "successfuly room created")
+	return nil
 }

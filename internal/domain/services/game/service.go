@@ -32,6 +32,6 @@ func (s *Service) CreateRoom(ctx context.Context, input *dto.InputCreateGameDto)
 	return r, nil
 }
 
-func (s *Service) JoinToRoom(ctx context.Context, input *dto.InputJoinGameDto) (*room.Room, error) {
-	return s.provider.FindRoom(ctx, input.Code)
+func (s *Service) FindRoomByCode(ctx context.Context, code string) (*room.Room, error) {
+	return s.provider.FindRoom(ctx, code)
 }

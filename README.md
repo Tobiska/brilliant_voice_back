@@ -1,15 +1,18 @@
 # Brilliant_voice_back
- - [ ] Обогащение логера контекстной информацией.
- - [ ] Выработать подход слияния контекстов(playerConn context + room context).
- - [ ] Конфигурация приложения(lib viper).
- - [ ] Разделить логику ISystemAction и IUserAction.
- - [ ] В handler разграничить http statusCode и ошибки.
- - [x] Timer, Ticker привести к нужному формату.
- - [ ] Gorilla/mux + Gin -> Fiber.
- - [x] Action validation.
- - [ ] Recovery логика в рамках комнаты.
- - [ ] Обернуть ошибки на разных уровнях errors.Wrapf().
- - [ ] Тесты для RoundRunning, WaitUsers, Results, Finished состояний
- - [ ] Тесты для playerConn
- - [ ] Полноценный функциональный тест Fsm.
- - [ ] Обеспечить уникальность username.
+- [ ] Gorilla/mux + Gin -> Fiber.
+- [ ] Тесты для RoundRunning, WaitUsers, Results, Finished состояний
+- [ ] Тесты для playerConn 
+- [ ] Мульти-стейдж докер образ.
+- [ ] MongoDb round provider.
+- [ ] Обогащение логера контекстной информацией.
+- [ ] Выработать подход слияния контекстов(playerConn context + room context).
+- [ ] Конфигурация приложения(lib viper).
+- [ ] Разделить логику ISystemAction и IUserAction.
+- [ ] В handler разграничить http statusCode и ошибки.
+- [x] Timer, Ticker привести к нужному формату.
+- [x] Action validation.
+- [ ] Recovery логика в рамках комнаты.
+- [ ] Обернуть ошибки на разных уровнях errors.Wrapf().
+- [ ] Полноценный функциональный тест Fsm.
+- [ ] Обеспечить уникальность username.
+- [ ] Rate Limiter
