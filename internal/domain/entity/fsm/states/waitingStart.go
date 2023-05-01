@@ -9,7 +9,7 @@ import (
 type WaitStart struct{}
 
 func (ws *WaitStart) Current() string {
-	return "wait start"
+	return "WAIT_START"
 }
 
 func (ws *WaitStart) Wait(_ *game.Game) {}

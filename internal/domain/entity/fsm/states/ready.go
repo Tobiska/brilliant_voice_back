@@ -9,7 +9,7 @@ import (
 type Ready struct{}
 
 func (r *Ready) Current() string {
-	return "ready"
+	return "READY"
 }
 
 func (r *Ready) Wait(_ *game.Game) {}

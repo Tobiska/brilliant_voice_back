@@ -9,7 +9,7 @@ type Results struct {
 }
 
 func (r *Results) Current() string {
-	return "dead"
+	return "RESULTS"
 }
 
 func (c *Results) Run(_ *game.Game) fsm.IState {

@@ -22,7 +22,7 @@ func NewGameService(provider IGameProvider) *Service {
 func (s *Service) CreateRoom(ctx context.Context, input *dto.InputCreateGameDto) (*room.Room, error) {
 	r, err := s.provider.CreateRoom(ctx, input.ID, game.Properties{
 		CountPlayers:  input.CountPlayers,
-		TimerDuration: time.Duration(input.TimeDurationRound),
+		TimerDuration: time.Duration(input.TimeDurationRound) * time.Second,
 	})
 	if err != nil {
 		log.Error().Err(err)

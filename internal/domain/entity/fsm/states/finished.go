@@ -12,5 +12,5 @@ func (f Finished) Run(_ *game.Game) fsm.IState {
 }
 
 func (f Finished) Current() string {
-	return "finished"
+	return "FINISHED"
 }

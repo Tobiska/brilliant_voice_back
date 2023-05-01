@@ -63,7 +63,7 @@ func (us Users) Len() int {
 
 func (us Users) Delete(id string) error {
 	if u, ex := us.cnt[id]; ex {
-		closeCtx, _ := context.WithTimeout(context.Background(), 1)
+		closeCtx, _ := context.WithTimeout(context.Background(), 1) //todo avoid ctx leak
 		go u.Conn.Close(closeCtx)
 
 		delete(us.cnt, id)
@@ -116,8 +116,8 @@ func (g *Game) GetOwner() (*User, error) {
 
 func (g *Game) StartTimer() error {
 	return g.Timer.Send(context.Background(), TimerInfo{
-		TickerPeriod:  3 * time.Second, //todo refactor
-		TimeOutPeriod: g.Properties.TimerDuration * time.Second,
+		TickerPeriod:  3 * time.Second, //todo передать в конфиг
+		TimeOutPeriod: g.Properties.TimerDuration,
 	})
 }
 

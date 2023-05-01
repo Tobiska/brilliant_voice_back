@@ -8,7 +8,7 @@ import (
 type Created struct{}
 
 func (c *Created) Current() string {
-	return "created"
+	return "CREATED"
 }
 
 func (c *Created) Run(_ *game.Game) fsm.IState {

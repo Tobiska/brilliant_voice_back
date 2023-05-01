@@ -75,7 +75,7 @@ func (pc *PlayerConn) readPump() {
 
 func (pc *PlayerConn) writePump() {
 	defer func() {
-		if err := pc.Close(); err != nil {
+		if err := pc.close(); err != nil {
 			log.Error().Err(err).Str("room_id", pc.roomDesc.Code).
 				Msg("error close websocket connection")
 		}
@@ -122,7 +122,12 @@ func (pc *PlayerConn) handleError(err error) bool {
 	return errors.Is(err, game.ErrDone)
 }
 
-func (pc *PlayerConn) Close() error {
+func (pc *PlayerConn) StopChannel() <-chan struct{} {
+	return pc.ctxClose.Done()
+}
+
+func (pc *PlayerConn) close() error {
 	_ = pc.ws.WriteMessage(websocket.CloseMessage, []byte{})
+	pc.cancel()
 	return pc.ws.Close()
 }

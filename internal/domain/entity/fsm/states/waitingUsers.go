@@ -12,7 +12,7 @@ type WaitUsers struct {
 }
 
 func (wu *WaitUsers) Current() string {
-	return "wait users"
+	return "WAIT_USERS"
 }
 
 func (wu *WaitUsers) Send(g *game.Game, a fsm.IUserAction) (fsm.IState, error) {

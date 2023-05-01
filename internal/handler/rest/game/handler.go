@@ -5,6 +5,7 @@ import (
 	"brillian_voice_back/internal/domain/entity/game"
 	gameSrv "brillian_voice_back/internal/domain/services/game"
 	"brillian_voice_back/internal/infrustucture/conn"
+	"context"
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -78,7 +79,7 @@ func (h *Handler) createHandle(c *fiber.Ctx) error {
 
 func (h *Handler) joinHandle(c *websocket.Conn) {
 	dtoVal := c.Locals(JoinDtoKey)
-	d, _ := dtoVal.(dto.InputJoinGameDto)
+	d := dtoVal.(dto.InputJoinGameDto)
 
 	pc := conn.NewPlayerConn(c, d.Room.ActionChannel())
 	u := game.NewUser(d.ID, d.Username, pc.Adapter())
@@ -93,13 +94,15 @@ func (h *Handler) joinHandle(c *websocket.Conn) {
 		Str("id", d.ID).
 		Str("username", d.Username).
 		Str("room", d.Room.Desc().Code).Msg("joined to room")
+
+	go pc.Run()
 	if err := d.Room.JoinToRoom(u); err != nil {
 		log.Error().
 			Err(err).
 			Str("id", d.ID).
 			Str("room_code", d.Room.Desc().Code).Msg("an error occurred while joining the room")
-		_ = pc.Close()
+		pc.Adapter().Close(context.TODO())
 		return
 	}
-	pc.Run()
+	<-pc.StopChannel()
 }

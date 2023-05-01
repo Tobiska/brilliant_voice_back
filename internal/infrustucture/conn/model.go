@@ -6,13 +6,14 @@ import (
 )
 
 type StateInf struct {
-	Code          string    `json:"code"`
-	Users         []UserInf `json:"users"`
-	OwnerName     string    `json:"owner_name"`
-	Status        string    `json:"status"`
-	RestTime      string    `json:"rest_time"`
-	Rounds        RoundInf  `json:"round"`
-	NumberOfRound int       `json:"number_of_round"`
+	Code          string        `json:"code"`
+	Users         []UserInf     `json:"users"`
+	OwnerName     string        `json:"owner_name"`
+	Status        string        `json:"status"`
+	RestTime      string        `json:"rest_time"`
+	Rounds        RoundInf      `json:"round"`
+	Properties    PropertiesInf `json:"properties"`
+	NumberOfRound int           `json:"number_of_round"`
 }
 
 type RoundInf struct {
@@ -43,6 +44,10 @@ func ToInfState(state game.Game) (StateInf, error) {
 		Rounds: RoundInf{
 			Question: state.Rounds[state.NumberOfRound].Question.Text,
 			Answers:  as,
+		},
+		Properties: PropertiesInf{
+			CountPlayers: state.Properties.CountPlayers,
+			Time:         state.Properties.TimerDuration.String(),
 		},
 		OwnerName: o.Username,
 	}, nil

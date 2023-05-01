@@ -25,7 +25,7 @@ func Run() {
 	rp := inmemory.NewRoundProvider() //todo change to mongodb impl
 
 	g := codeGenerator.NewGenerator(4)
-	p := roomProvider.NewProvider(g, 5, rp)
+	p := roomProvider.NewProvider(g, 100, rp)
 	s := game.NewGameService(p)
 
 	h := handlers.NewHandler(s)

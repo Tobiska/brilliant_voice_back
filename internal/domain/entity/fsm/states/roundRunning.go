@@ -12,7 +12,7 @@ type RoundRunning struct {
 }
 
 func (r *RoundRunning) Current() string {
-	return "round_running"
+	return "RUNNING"
 }
 
 func (r *RoundRunning) Send(g *game.Game, a fsm.IUserAction) (fsm.IState, error) {

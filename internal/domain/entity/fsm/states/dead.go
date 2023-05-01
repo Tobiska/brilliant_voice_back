@@ -13,7 +13,7 @@ var (
 type Dead struct{}
 
 func (d *Dead) Current() string {
-	return "dead"
+	return "DEAD"
 }
 
 func (d *Dead) Send(_ *game.Game, _ fsm.IUserAction) (fsm.IState, error) {
