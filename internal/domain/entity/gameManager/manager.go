@@ -2,159 +2,69 @@ package gameManager
 
 import (
 	"brillian_voice_back/internal/domain/entity/fsm"
-	"brillian_voice_back/internal/domain/entity/properties"
-	"brillian_voice_back/internal/domain/entity/user"
-	"github.com/rs/zerolog/log"
+	"brillian_voice_back/internal/domain/entity/fsm/states"
+	"brillian_voice_back/internal/domain/entity/game"
+	"context"
+	"sync"
 	"time"
 )
 
 type GameManager struct {
-	numCurRound int
-	state       *GameState
+	fsm *fsm.Fsm
 
-	roundTimer *time.Timer
-
-	ticker *time.Ticker
+	mu *sync.Mutex
 }
 
-func NewManager(code, ownerId string, prop properties.Properties) *GameManager {
+func NewManager(code, ownerId string, prop game.Properties, rounds []*game.Round, adapter game.ITimer) *GameManager {
 	return &GameManager{
-		numCurRound: 0, //todo init value
-		state: &GameState{
-			Descriptor: Descriptor{
+		mu: &sync.Mutex{},
+		fsm: fsm.InitFsm(&states.Created{}, &game.Game{
+			Rounds: rounds,
+			Timer:  adapter,
+			Descriptor: game.Descriptor{
 				Code:       code,
-				IsFully:    false,
 				Properties: prop,
 			},
-			Users:   make(map[string]*user.User, 0),
+			Users:   game.NewUsersContainer(),
 			OwnerId: ownerId,
-			status:  WaitStart,
-		},
+		}),
 	}
 }
 
-func (m *GameManager) State() GameState { //todo remove
-	return *m.state
-}
-
-func (m *GameManager) UpdateAll() {
-	for _, u := range m.state.Users {
-		if err := u.Update(); err != nil {
-			log.Error().
-				Str("user_id", u.ID).
-				Err(err).Msg("error in time update")
-			continue
-		}
-	}
-}
-
-func (m *GameManager) Start() error {
-	m.state.status = Running
-	m.roundTimer = time.NewTimer(time.Duration(m.state.Properties.TimerDuration))
-	return nil
-}
-
-func (m *GameManager) FinishRound() error {
-	//todo create new obj round and set current question
-	if m.state.NumberOfRound < 5 {
-		m.state.status = Dead
-		return ErrEndOfGame
-	}
-	m.state.NumberOfRound++
-	return nil
-}
-
-func (m *GameManager) HandleLeave(id string) error {
-	if m.state.OwnerId == id {
-		m.state.status = Dead
-		return ErrRoomIsDead
-	}
-	if err := m.leaveFromRoom(id); err != nil {
-		log.Err(err).
-			Str("user_id", id).
-			Msg("error when trying to leave the room")
-	} else {
-		log.Info().
-			Str("user_id", id).Str("room_id", m.state.Code).
-			Msg("user successfully left the room")
-	}
-	return nil
-}
-
-func (m *GameManager) CloseAll() {
-	for _, u := range m.state.Users {
-		warn := u.DeleteAndClose()
-		log.Warn().
-			Err(warn).
-			Str("user_id", u.ID).
-			Msg("occur error when close")
-	}
-}
-
-func (m *GameManager) AddUser(u *user.User) error {
-	if err := m.check(u); err != nil {
-		return err
-	}
-	if _, ex := m.state.Users[u.ID]; ex {
-		return ErrUserAlreadyExist
-	} else {
-		m.state.Users[u.ID] = u
-	}
-	return nil
-}
-
-func (m *GameManager) GameDesc() Descriptor {
-	return Descriptor{
-		Code:       m.state.Code,
-		IsFully:    m.state.IsFully,
-		Properties: m.state.Properties,
-		Status:     string(m.state.status),
-	}
-}
-
-func (m *GameManager) check(user *user.User) error {
-	//todo cond if state have status is fully
-	if m.state.Status() == Dead {
-		return ErrRoomIsDead
-	}
-	if _, err := m.state.GetOwner(); err != nil && user.ID != m.state.OwnerId {
+func (m *GameManager) DoAsync(a fsm.IUserAction) error {
+	if err := m.do(a); err != nil {
+		m.NotifyError(err, a.User())
 		return err
 	}
 	return nil
 }
 
-func (m *GameManager) IsRoundFinishCh() <-chan time.Time {
-	return m.roundTimer.C
-}
-
-func (m *GameManager) TickerUpdateCh() <-chan time.Time {
-	return m.ticker.C
-}
-
-func (m *GameManager) leaveFromRoom(id string) error {
-	u, ok := m.state.Users[id]
-	if !ok {
-		return ErrUserDoesNotExist
+func (m *GameManager) NotifyError(err error, users ...*game.User) {
+	for _, u := range users {
+		ctx, _ := context.WithTimeout(context.Background(), 3*time.Millisecond) //todo avoid ctx leak
+		go u.Conn.SendError(ctx, err)
 	}
-	delete(m.state.Users, u.ID)
-	return nil
 }
 
-func (m *GameManager) Do(a fsm.IAction) (err error) {
-	switch a.Type() {
-	case fsm.AnswerType:
-		err = m.HandleAnswer(a)
-	case fsm.ReadyType:
-		err = m.HandleReady(a)
-	case fsm.CloseType:
-		err = m.HandleClose(a)
-	case fsm.StartType:
-		err = m.HandleStart(a)
-	case fsm.PingType:
-		err = m.HandlePing(a)
-
-	default:
-		return ErrUndefinedAction
+func (m *GameManager) UpdateState(g game.Game, users ...*game.User) {
+	for _, u := range users {
+		ctx, _ := context.WithTimeout(context.Background(), 3*time.Millisecond) //todo avoid ctx leak
+		u.Conn.UpdateGame(ctx, g)
 	}
+}
+
+func (m *GameManager) do(a fsm.IUserAction) (err error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	err = m.fsm.SendAction(a)
+	m.UpdateState(m.Game(), m.Game().Users.ToSlice()...)
 	return
+}
+
+func (m *GameManager) DoSync(a fsm.IUserAction) (err error) {
+	return m.do(a)
+}
+
+func (m *GameManager) Game() game.Game {
+	return *m.fsm.GameUpdateFmt()
 }

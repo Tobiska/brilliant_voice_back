@@ -1,8 +1,16 @@
 package states
 
-type Created struct {
+import (
+	"brillian_voice_back/internal/domain/entity/fsm"
+	"brillian_voice_back/internal/domain/entity/game"
+)
+
+type Created struct{}
+
+func (c *Created) Current() string {
+	return "CREATED"
 }
 
-func (c *Created) Exec(a) {
-
+func (c *Created) Run(_ *game.Game) fsm.IState {
+	return &WaitStart{}
 }

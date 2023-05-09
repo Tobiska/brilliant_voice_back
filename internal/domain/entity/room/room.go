@@ -1,114 +1,110 @@
 package room
 
 import (
+	"brillian_voice_back/internal/domain/entity/actions"
 	"brillian_voice_back/internal/domain/entity/fsm"
+	"brillian_voice_back/internal/domain/entity/game"
 	"brillian_voice_back/internal/domain/entity/gameManager"
-	"brillian_voice_back/internal/domain/entity/properties"
-	"brillian_voice_back/internal/domain/entity/user"
-	"fmt"
+	"brillian_voice_back/internal/domain/entity/logicTimer"
+	"context"
 	"github.com/rs/zerolog/log"
-	"sync"
+)
+
+const (
+	BufferSize = 100
 )
 
 type Room struct {
 	manager *gameManager.GameManager
-	mu      *sync.RWMutex
 
-	actionCh chan fsm.IAction
-	leaveCh  chan string
-	errCh    chan error
+	userActionCh   chan fsm.IUserAction
+	systemActionCh chan fsm.IUserAction
+
+	timerManager *logicTimer.Manager
+
+	cancelCtx context.Context
+	cancel    func()
 }
 
-func (r *Room) OperationChannel() chan fsm.IAction {
-	return r.actionCh
-}
+func NewRoom(code, ownerId string,
+	prop game.Properties,
+	rounds []*game.Round,
+	timerManager *logicTimer.Manager,
+) *Room {
+	ctx, cancel := context.WithCancel(context.TODO())
+	actionCh := make(chan fsm.IUserAction, BufferSize)
+	systemCh := make(chan fsm.IUserAction, BufferSize)
+	timerManager.Init(ctx, systemCh)
 
-func (r *Room) LeaveChannel() chan string {
-	return r.leaveCh
-}
-
-func (r *Room) ErrorChannel() chan error {
-	return r.errCh
-}
-
-func (r *Room) GetState() gameManager.GameState {
-	return r.manager.State()
-}
-
-func NewRoom(code, ownerId string, prop properties.Properties) *Room {
 	return &Room{
-		manager:  gameManager.NewManager(code, ownerId, prop),
-		actionCh: make(chan fsm.IAction, 0),
-		leaveCh:  make(chan string),
-		errCh:    make(chan error),
-
-		mu: &sync.RWMutex{},
+		cancelCtx:      ctx,
+		cancel:         cancel,
+		manager:        gameManager.NewManager(code, ownerId, prop, rounds, timerManager.Adapter()),
+		timerManager:   timerManager,
+		userActionCh:   actionCh, //mb add buffer
+		systemActionCh: systemCh,
 	}
 }
 
-func (r *Room) notifyAll() {
-	r.manager.UpdateAll()
-	log.Info().
-		Str("room_id", r.Desc().Code).
-		Msg("updated all player connections")
+func (r *Room) Run() {
+	go r.pumpReceiver()
 }
 
-func (r *Room) Desc() gameManager.Descriptor {
-	return r.manager.GameDesc()
+func (r *Room) Desc() game.Descriptor {
+	return r.manager.Game().Descriptor
 }
 
-func (r *Room) Run() chan error {
-	go func() {
-		defer r.Finish()
-		for {
-			select {
-			case <-r.manager.IsRoundFinishCh():
-				if err := r.manager.FinishRound(); err != nil {
-					log.Error().
-						Err(err).
-						Msg("error in time trans to next round")
-					break
-				} //todo add  errCh
+func (r *Room) ActionChannel() chan fsm.IUserAction {
+	return r.userActionCh
+}
 
-			case <-r.manager.TickerUpdateCh():
-				r.notifyAll()
-			case a := <-r.actionCh:
-				log.Info().
-					Str("room_id", r.Desc().Code).
-					Str("action", fmt.Sprintf("%s", a)).
-					Msg("room handle action")
-				if err := r.manager.Do(a); err != nil {
-					log.Error().Err(err).
-						Str("room_id", r.Desc().Code).
-						Str("action", fmt.Sprintf("%s", a)).
-						Msg("handle action error")
-					//todo write error msg to client
-					continue
-				}
-				r.notifyAll()
-			case id := <-r.leaveCh:
-				if err := r.manager.HandleLeave(id); err == nil {
-					r.notifyAll()
-				}
+func (r *Room) pumpReceiver() {
+	for {
+		if err := r.cancelCtx.Err(); err != nil {
+			r.Clear()
+			return
+		}
+		select {
+		case <-r.cancelCtx.Done():
+			r.Clear()
+			return
+		case a := <-r.userActionCh:
+			log.Info().
+				Str("user_action", a.String()).
+				Str("room_id", r.manager.Game().Code).
+				Msg("handle user action")
+			if err := r.manager.DoAsync(a); err != nil {
+				log.Error().
+					Err(err).
+					Str("user_action", a.String()).
+					Str("room_id", r.manager.Game().Code).
+					Msg("error handle user action")
+			}
+		case a := <-r.systemActionCh:
+			log.Info().
+				Str("system_action", a.String()).
+				Str("room_id", r.manager.Game().Code).
+				Msg("handle system action")
+			if err := r.manager.DoAsync(a); err != nil {
+				log.Error().
+					Err(err).
+					Str("system_action", a.String()).
+					Str("room_id", r.manager.Game().Code).
+					Msg("error handle system action")
 			}
 		}
-	}()
-	return r.errCh
-}
-
-func (r *Room) Finish() {
-	r.manager.CloseAll()
-	log.Warn().
-		Str("room_code", r.Desc().Code).
-		Msg("room has finished")
-}
-
-func (r *Room) JoinToRoom(u *user.User) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if err := r.manager.AddUser(u); err != nil {
-		return err
 	}
-	r.notifyAll()
-	return nil
+}
+
+func (r *Room) Clear() {
+	log.Error().
+		Str("room_id", r.manager.Game().Code).
+		Msg("room receiver stopped")
+}
+func (r *Room) JoinToRoom(u *game.User) error {
+	return r.manager.DoSync(actions.AddUserAction(u))
+}
+
+func (r *Room) LeaveUser(u *game.User) error {
+	return r.manager.DoSync(actions.LeaveUserAction(u))
 }
